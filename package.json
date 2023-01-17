@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "description": "Generate tailwind styled-components from JSX tags. A faster tailwind styled-component workflow.",
   "license": "MIT",
+  "publisher": "dimitribarbot",
   "main": "./dist/extension.js",
   "repository": {
     "type": "git",
@@ -108,6 +109,6 @@
     ]
   },
   "engines": {
-    "node": ">=12.17.0"
+    "vscode": "^1.74.0"
   }
 }
