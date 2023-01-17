@@ -3,7 +3,7 @@ export function getImportInsertion(
   importPath: string,
   modulesToImport: string[]
 ) {
-  const importRegex = new RegExp(`(import {.*?)\\s+} from "${importPath}"[;]?`);
+  const importRegex = new RegExp(`(import {[^}]*?)[\\s\\n]+} from "${importPath}"[;]?`, "gm");
   const importAlreadyPresent = importRegex.exec(existingText);
   if (importAlreadyPresent) {
     const matchIndex = importAlreadyPresent.index;
@@ -14,14 +14,14 @@ export function getImportInsertion(
       insertionText: `, ${modulesToImport.join(", ")}`,
       insertionOffset
     };
-  } else {
-    return {
-      insertionText: `import { ${modulesToImport.join(
-        ", "
-      )} } from "${importPath}";\n`,
-      insertionOffset: 0
-    };
   }
+  
+  return {
+    insertionText: `import { ${modulesToImport.join(
+      ", "
+    )} } from "${importPath}";\n`,
+    insertionOffset: 0
+  };
 }
 
 export function getTailwindStyledImportInsertion(existingText: string) {

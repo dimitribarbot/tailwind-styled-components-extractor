@@ -30,6 +30,23 @@ import { baz } from "./qux"
   });
 });
 
+test("getImportInsertion with existing import, custom external file and multiple import lines", async () => {
+  const code = `
+import { foo } from "./bar"
+import {
+  Bar,
+  Def
+} from "./Component.styles"
+import { baz } from "./qux"
+  `;
+
+  const insertion = getImportInsertion(code, "./Component.styles", ["Abc", "Xyz"]);
+  expect(insertion).toEqual({
+    insertionText: ", Abc, Xyz",
+    insertionOffset: 50
+  });
+});
+
 test("getTailwindStyledImportInsertion no existing import", async () => {
   const code = `
 import { foo } from "./bar"
