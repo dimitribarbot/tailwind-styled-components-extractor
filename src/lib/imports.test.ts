@@ -1,0 +1,69 @@
+import {
+  getImportInsertion,
+  getTailwindStyledImportInsertion
+} from "./imports";
+
+test("getImportInsertion no existing import", async () => {
+  const code = `
+import { foo } from "./bar"
+import { baz } from "./qux"
+  `;
+
+  const insertion = getImportInsertion(code, "./styles", ["Abc", "Xyz"]);
+  expect(insertion).toEqual({
+    insertionText: 'import { Abc, Xyz } from "./styles";\n',
+    insertionOffset: 0
+  });
+});
+
+test("getImportInsertion with existing import", async () => {
+  const code = `
+import { foo } from "./bar"
+import { Def } from "./styles"
+import { baz } from "./qux"
+  `;
+
+  const insertion = getImportInsertion(code, "./styles", ["Abc", "Xyz"]);
+  expect(insertion).toEqual({
+    insertionText: ", Abc, Xyz",
+    insertionOffset: 41
+  });
+});
+
+test("getTailwindStyledImportInsertion no existing import", async () => {
+  const code = `
+import { foo } from "./bar"
+import { baz } from "./qux"
+  `;
+
+  const insertion = getTailwindStyledImportInsertion(code);
+  expect(insertion).toEqual({
+    insertionText: "import tw from \"tailwind-styled-components\";\n",
+    insertionOffset: 0
+  });
+});
+
+test("getTailwindStyledImportInsertion no existing import, but with other named imports ", async () => {
+  const code = `
+import { foo } from "./bar"
+import { css }  from 'styled-components'
+import { baz } from "./qux"
+  `;
+
+  const insertion = getTailwindStyledImportInsertion(code);
+  expect(insertion).toEqual({
+    insertionText: "import tw from \"tailwind-styled-components\";\n",
+    insertionOffset: 0
+  });
+});
+
+test("getTailwindStyledImportInsertion with existing import", async () => {
+  const code = `
+import { foo } from "./bar"
+import  tw from 'tailwind-styled-components'
+import { baz } from "./qux"
+  `;
+
+  const insertion = getTailwindStyledImportInsertion(code);
+  expect(insertion).toEqual(null);
+});
