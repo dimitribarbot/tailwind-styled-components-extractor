@@ -99,8 +99,8 @@ const extract = async (type: ExtractType): Promise<void> => {
         extractUnboundComponentNames(unboundComponents);
       const unboundComponentClassNameOffsets =
         extractUnboundComponentClassNameOffsets(unboundComponents);
-      await modifyImports(editor, styleFile, unboundComponentNames);
       await removeClassNames(editor, unboundComponentClassNameOffsets);
+      await modifyImports(editor, styleFile, unboundComponentNames);
 
       const styleFileEditor = await openFileInEditor(styleFile);
       await insertStyles(styleFileEditor, declarations);

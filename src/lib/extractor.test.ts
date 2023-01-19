@@ -18,6 +18,7 @@ const TestComponent: React.FC = ({ a }) => {
         <Efg className={c ? "justify-center" : "justify-start"} />
         <Ghi className={\`flex flex-col \${c && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} />
         <Efg className="justify-center" />
+        <Ghi />
         <section />
       </Def>
       <ul>
@@ -51,6 +52,10 @@ const TestComponent: React.FC = ({ a }) => {
       name: "Efg",
       className: "justify-center",
       classNameOffsets: { start: 356, end: 382 }
+    },
+    {
+      name: "Ghi",
+      className: ""
     }
   ]);
 });

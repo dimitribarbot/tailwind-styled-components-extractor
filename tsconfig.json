@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "es2020",
+    "lib": ["es2020"],
     "outDir": "dist",
     "sourceMap": true,
     "rootDir": "src",
@@ -12,9 +13,15 @@
     "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
     "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
     // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+    "jsx": "preserve",
     "paths": {
       "@babel/types": ["./node_modules/@babel/types"]
     }
   },
-  "exclude": ["node_modules", ".vscode-test", "src/**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "src/**/*.test.ts",
+    "src/test/suite/component/*.*"
+  ]
 }

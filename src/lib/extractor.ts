@@ -177,6 +177,11 @@ export const collectUnboundComponents = (code: string) => {
                   end: classNameAttribute.end
                 }
               });
+            } else {
+              unboundJSXIdentifiers.add({
+                name: node.name,
+                className: ""
+              });
             }
           }
 
