@@ -1,7 +1,11 @@
 import * as vscode from "vscode";
 
 import { getCorrespondingStyleFile } from "./lib/corresponding-file";
-import { collectUnbound, generateDeclarations } from "./lib/extractor";
+import {
+  collectUnboundComponents,
+  extractUnboundComponentNames,
+  generateDeclarations
+} from "./lib/extractor";
 import { getTailwindStyledImportInsertion } from "./lib/imports";
 import {
   insertTailwindStyledImport,
@@ -35,15 +39,13 @@ const extract = async (type: ExtractType): Promise<void> => {
       return;
     }
 
-    const document = editor.document;
-
     const config = vscode.workspace.getConfiguration(
       "tailwindStyledComponentsExtractor"
     );
 
-    const text = document.getText();
-    const unbound = collectUnbound(text);
-    if (!unbound.length) {
+    const text = editor.document.getText();
+    const unboundComponents = collectUnboundComponents(text);
+    if (!unboundComponents.length) {
       vscode.window.showWarningMessage(
         "[SCE] Nothing to extract: There are no unbound components"
       );
@@ -54,7 +56,7 @@ const extract = async (type: ExtractType): Promise<void> => {
       type == "extractExportedToClipboard" || type == "extractToSeparateFile";
 
     const declarations = generateDeclarations({
-      unbound,
+      unboundComponents,
       exportIdentifier
     });
 
@@ -65,14 +67,15 @@ const extract = async (type: ExtractType): Promise<void> => {
           editor.document.getText()
         );
         if (tailwindStyledImportInsertion) {
-          clipboardText = tailwindStyledImportInsertion.insertionText + declarations;
+          clipboardText =
+            tailwindStyledImportInsertion.insertionText + declarations;
         }
       }
 
       await vscode.env.clipboard.writeText(clipboardText);
 
       vscode.window.showInformationMessage(
-        `[SCE] Copied to clipboard! (Found: ${unbound.length}) `
+        `[SCE] Copied to clipboard! (Found: ${unboundComponents.length}) `
       );
     } else if (type == "extractToSeparateFile") {
       const styleFile = getCorrespondingStyleFile(
@@ -90,7 +93,9 @@ const extract = async (type: ExtractType): Promise<void> => {
         return;
       }
 
-      await modifyImports(editor, styleFile, unbound);
+      const unboundComponentNames =
+        extractUnboundComponentNames(unboundComponents);
+      await modifyImports(editor, styleFile, unboundComponentNames);
 
       const styleFileEditor = await openFileInEditor(styleFile);
       await insertStyles(styleFileEditor, declarations);

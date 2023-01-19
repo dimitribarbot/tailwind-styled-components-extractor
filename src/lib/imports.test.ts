@@ -11,7 +11,7 @@ import { baz } from "./qux"
 
   const insertion = getImportInsertion(code, "./styles", ["Abc", "Xyz"]);
   expect(insertion).toEqual({
-    insertionText: 'import { Abc, Xyz } from "./styles";\n',
+    insertionText: 'import { Abc, Xyz } from "./styles"\n',
     insertionOffset: 0
   });
 });
@@ -55,7 +55,7 @@ import { baz } from "./qux"
 
   const insertion = getTailwindStyledImportInsertion(code);
   expect(insertion).toEqual({
-    insertionText: "import tw from \"tailwind-styled-components\";\n",
+    insertionText: "import tw from \"tailwind-styled-components\"\n",
     insertionOffset: 0
   });
 });
@@ -69,7 +69,7 @@ import { baz } from "./qux"
 
   const insertion = getTailwindStyledImportInsertion(code);
   expect(insertion).toEqual({
-    insertionText: "import tw from \"tailwind-styled-components\";\n",
+    insertionText: "import tw from \"tailwind-styled-components\"\n",
     insertionOffset: 0
   });
 });

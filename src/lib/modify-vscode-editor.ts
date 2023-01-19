@@ -27,6 +27,7 @@ export async function modifyImports(
   await editor.edit(editBuilder => {
     editBuilder.insert(insertionPosition, insertionText);
   });
+  await editor.document.save();
 }
 
 export async function insertTailwindStyledImport(editor: vscode.TextEditor) {

@@ -19,7 +19,7 @@ export function getImportInsertion(
   return {
     insertionText: `import { ${modulesToImport.join(
       ", "
-    )} } from "${importPath}";\n`,
+    )} } from "${importPath}"\n`,
     insertionOffset: 0
   };
 }
@@ -31,10 +31,10 @@ export function getTailwindStyledImportInsertion(existingText: string) {
   const importAlreadyPresent = importRegex.test(existingText);
   if (!importAlreadyPresent) {
     return {
-      insertionText: `import tw from "tailwind-styled-components";\n`,
+      insertionText: `import tw from "tailwind-styled-components"\n`,
       insertionOffset: 0
     };
-  } else {
-    return null;
   }
+
+  return null;
 }

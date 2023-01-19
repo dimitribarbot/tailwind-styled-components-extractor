@@ -1,15 +1,24 @@
-import { collectUnbound, generateDeclarations } from "./extractor";
+import { collectUnboundComponents, generateDeclarations } from "./extractor";
 
-test("collectUnbound", async () => {
+test("collectUnboundComponents", async () => {
   const code = `
+
+type Props = {
+  a: {
+    b?: string
+  }
+}
+
 const Def = 1 as any
 
-const TestComponent: React.SFC = () => {
-  const c = a?.b ?? c
+const TestComponent: React.FC = ({ a }) => {
+  const b = a?.b
+  const c = b ?? c
   return (
-    <Abc someAttrs>
+    <Abc className="flex flex-col">
       <Def>
-        <Ghi />
+        <Efg className={c ? "justify-center" : "justify-start"} />
+        <Ghi className={\`flex flex-col \${c && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} />
         <section />
       </Def>
       <ul>
@@ -22,10 +31,21 @@ const TestComponent: React.SFC = () => {
 }
   `;
 
-  expect(collectUnbound(code)).toEqual(["Abc", "Ghi"]);
+  expect(collectUnboundComponents(code)).toEqual([
+    { name: "Abc", className: "flex flex-col" },
+    {
+      name: "Efg",
+      className: '${({ c }) => c ? "justify-center" : "justify-start"}'
+    },
+    {
+      name: "Ghi",
+      className:
+        '${({ c }) => c && "flex"} ${({ a, b, c }) => (a && b) || c ? "justify-center" : "justify-start"} flex flex-col'
+    }
+  ]);
 });
 
-test("collectUnbound syntax error", async () => {
+test("collectUnboundComponents syntax error", async () => {
   const code = `
 const Def = 1 as any
 
@@ -48,7 +68,7 @@ const TestComponent: React.SFC = () => {
   `;
 
   try {
-    collectUnbound(code);
+    collectUnboundComponents(code);
     fail("Should have thrown an error");
   } catch (e) {
     expect(
@@ -59,17 +79,23 @@ const TestComponent: React.SFC = () => {
 
 test("generateDeclarations no export", async () => {
   const declarations = await generateDeclarations({
-    unbound: ["Abc", "Xyz"],
+    unboundComponents: [
+      { name: "Abc", className: "flex flex-col" },
+      { name: "Xyz", className: "" }
+    ],
     exportIdentifier: false
   });
   expect(declarations).toEqual(
-    "const Abc = tw.div``\n" + "const Xyz = tw.div``"
+    "const Abc = tw.div`flex flex-col`\n" + "const Xyz = tw.div``"
   );
 });
 
 test("generateDeclarations yes export", async () => {
   const declarations = await generateDeclarations({
-    unbound: ["Abc", "Xyz"],
+    unboundComponents: [
+      { name: "Abc", className: "" },
+      { name: "Xyz", className: "" }
+    ],
     exportIdentifier: true
   });
   expect(declarations).toEqual(
