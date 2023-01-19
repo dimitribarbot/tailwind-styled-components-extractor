@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { getCorrespondingStyleFile } from "./lib/corresponding-file";
 import {
   collectUnboundComponents,
+  extractUnboundComponentClassNameOffsets,
   extractUnboundComponentNames,
   generateDeclarations
 } from "./lib/extractor";
@@ -10,7 +11,8 @@ import { getTailwindStyledImportInsertion } from "./lib/imports";
 import {
   insertTailwindStyledImport,
   insertStyles,
-  modifyImports
+  modifyImports,
+  removeClassNames
 } from "./lib/modify-vscode-editor";
 import { openFileInEditor } from "./lib/vscode-utils";
 
@@ -95,7 +97,10 @@ const extract = async (type: ExtractType): Promise<void> => {
 
       const unboundComponentNames =
         extractUnboundComponentNames(unboundComponents);
+      const unboundComponentClassNameOffsets =
+        extractUnboundComponentClassNameOffsets(unboundComponents);
       await modifyImports(editor, styleFile, unboundComponentNames);
+      await removeClassNames(editor, unboundComponentClassNameOffsets);
 
       const styleFileEditor = await openFileInEditor(styleFile);
       await insertStyles(styleFileEditor, declarations);
@@ -104,6 +109,10 @@ const extract = async (type: ExtractType): Promise<void> => {
       await editor.document.save();
       await styleFileEditor.document.save();
     } else if (type == "extractToSameFile") {
+      const unboundComponentClassNameOffsets =
+        extractUnboundComponentClassNameOffsets(unboundComponents);
+      await removeClassNames(editor, unboundComponentClassNameOffsets);
+
       await insertStyles(editor, declarations);
       await insertTailwindStyledImport(editor);
 

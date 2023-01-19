@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 
+import type { ClassNameOffsets } from "./extractor";
 import {
   getImportInsertion,
   getTailwindStyledImportInsertion
@@ -28,6 +29,25 @@ export async function modifyImports(
     editBuilder.insert(insertionPosition, insertionText);
   });
   await editor.document.save();
+}
+
+export async function removeClassNames(
+  editor: vscode.TextEditor,
+  classNameOffsetRangesToRemove: ClassNameOffsets[]
+) {
+  const classNameRangesToRemove = classNameOffsetRangesToRemove.map(
+    offsetRange => {
+      const startPosition = editor.document.positionAt(offsetRange.start);
+      const endPosition = editor.document.positionAt(offsetRange.end);
+      return new vscode.Range(startPosition, endPosition);
+    }
+  );
+
+  await editor.edit(editBuilder => {
+    for (const classNameRangeToRemove of classNameRangesToRemove) {
+      editBuilder.delete(classNameRangeToRemove);
+    }
+  });
 }
 
 export async function insertTailwindStyledImport(editor: vscode.TextEditor) {
