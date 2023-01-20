@@ -65,12 +65,12 @@ describe("collectUnboundComponents", () => {
   
   const TestComponent: React.FC = ({ a }) => {
     const b = a?.b
-    const c = b ?? c
+    const c = b ?? a?.d
     return (
       <Abc className="flex flex-col">
         <Def>
           <Efg className={c ? "justify-center" : "justify-start"} />
-          <Ghi className={\`flex flex-col \${c && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} />
+          <Ghi className={\`flex flex-col \${c(a?.e) && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} />
           <Efg className="justify-center" />
           <Ghi />
           <section />
@@ -89,23 +89,23 @@ describe("collectUnboundComponents", () => {
       {
         name: "Abc",
         className: "flex flex-col",
-        classNameOffsets: { start: 138, end: 163 }
+        classNameOffsets: { start: 141, end: 166 }
       },
       {
         name: "Efg",
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
-        classNameOffsets: { start: 194, end: 244 }
+        classNameOffsets: { start: 197, end: 247 }
       },
       {
         name: "Ghi",
         className:
-          '${({ c }) => c && "flex"} ${({ a, b, c }) => (a && b) || c ? "justify-center" : "justify-start"} flex flex-col',
-        classNameOffsets: { start: 263, end: 359 }
+          '${({ c, a }) => c(a?.e) && "flex"} ${({ a, b, c }) => (a && b) || c ? "justify-center" : "justify-start"} flex flex-col',
+        classNameOffsets: { start: 266, end: 368 }
       },
       {
         name: "Efg",
         className: "justify-center",
-        classNameOffsets: { start: 378, end: 404 }
+        classNameOffsets: { start: 387, end: 413 }
       },
       {
         name: "Ghi",
@@ -167,7 +167,7 @@ describe("generateDeclarations", () => {
       exportIdentifier: false
     });
     expect(declarations).toEqual(
-      "const Abc = tw.div`flex flex-col`\n" +
+      "const Abc = tw.div`flex flex-col`\n\n" +
         'const Xyz = tw.div`${({ c }) => c ? "justify-center" : "justify-start"}`'
     );
   });
@@ -191,7 +191,7 @@ describe("generateDeclarations", () => {
       exportIdentifier: true
     });
     expect(declarations).toEqual(
-      "export const Abc = tw.div`flex flex-col`\n" +
+      "export const Abc = tw.div`flex flex-col`\n\n" +
         'export const Xyz = tw.div`${({ c }) => c ? "justify-center" : "justify-start"}`'
     );
   });
@@ -238,7 +238,7 @@ describe("generateDeclarations", () => {
       exportIdentifier: false
     });
     expect(declarations).toEqual(
-      "const Abc = tw.span`flex flex-col`\n" +
+      "const Abc = tw.span`flex flex-col`\n\n" +
         'const Xyz = tw(Efg)`${({ c }) => c ? "justify-center" : "justify-start"}`'
     );
   });
@@ -285,7 +285,7 @@ describe("generateDeclarations", () => {
       exportIdentifier: true
     });
     expect(declarations).toEqual(
-      "export const Abc = tw.span`flex flex-col`\n" +
+      "export const Abc = tw.span`flex flex-col`\n\n" +
         'export const Xyz = tw(Efg)`${({ c }) => c ? "justify-center" : "justify-start"}`'
     );
   });

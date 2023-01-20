@@ -75,7 +75,7 @@ const extractCurrentToSeparateFile = async (
   );
   if (!styleFile) {
     vscode.window.showWarningMessage(
-      "[SCE] This file does not match the pattern in your configuration."
+      "[TSCE] This file does not match the pattern in your configuration."
     );
     return;
   }
@@ -145,7 +145,7 @@ const extractUnboundToClipboard = async (
   await vscode.env.clipboard.writeText(clipboardText);
 
   vscode.window.showInformationMessage(
-    `[SCE] Copied to clipboard! (Found: ${components.length}) `
+    `[TSCE] Copied to clipboard! (Found: ${components.length}) `
   );
 };
 
@@ -165,7 +165,7 @@ const extractUnboundToSeparateFile = async (
   );
   if (!styleFile) {
     vscode.window.showWarningMessage(
-      "[SCE] This file does not match the pattern in your configuration."
+      "[TSCE] This file does not match the pattern in your configuration."
     );
     return;
   }
@@ -214,7 +214,7 @@ const extract = async (type: ExtractType): Promise<void> => {
       !/\.(js|ts)x?$/.test(editor.document.fileName)
     ) {
       vscode.window.showWarningMessage(
-        "[SCE] Only `.js`, `.ts`, `.jsx` and `.tsx` are supported"
+        "[TSCE] Only `.js`, `.ts`, `.jsx` and `.tsx` are supported"
       );
       return;
     }
@@ -238,7 +238,7 @@ const extract = async (type: ExtractType): Promise<void> => {
       const component = getUnderlyingComponent(text, offset);
       if (!component) {
         vscode.window.showWarningMessage(
-          "[SCE] Nothing to extract: There is no underlying component"
+          "[TSCE] Nothing to extract: There is no underlying component"
         );
         return;
       }
@@ -269,7 +269,7 @@ const extract = async (type: ExtractType): Promise<void> => {
       const components = collectUnboundComponents(text);
       if (!components.length) {
         vscode.window.showWarningMessage(
-          "[SCE] Nothing to extract: There are no unbound components"
+          "[TSCE] Nothing to extract: There are no unbound components"
         );
         return;
       }
@@ -303,11 +303,13 @@ const extract = async (type: ExtractType): Promise<void> => {
   } catch (e) {
     if (e instanceof Error && Object.getPrototypeOf(e).name === "SyntaxError") {
       vscode.window.showErrorMessage(
-        `[SCE] Failed to extract due to syntax error: ${e.message}`
+        `[TSCE] Failed to extract due to syntax error: ${e.message}`
       );
     } else {
-      console.error("[SCE]", e);
-      vscode.window.showErrorMessage("[SCE] Unexpected error while extracting");
+      console.error("[TSCE]", e);
+      vscode.window.showErrorMessage(
+        "[TSCE] Unexpected error while extracting"
+      );
     }
   }
 };

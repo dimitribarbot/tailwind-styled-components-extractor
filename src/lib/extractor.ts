@@ -1,15 +1,25 @@
 import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
 import {
-  ConditionalExpression,
+  Expression,
+  isCallExpression,
+  isConditionalExpression,
+  isExpression,
+  isIdentifier,
+  isJSXAttribute,
   isJSXClosingElement,
+  isJSXEmptyExpression,
   isJSXIdentifier,
   isJSXOpeningElement,
+  isLogicalExpression,
+  isMemberExpression,
+  isOptionalMemberExpression,
+  isStringLiteral,
+  isTemplateLiteral,
   JSXAttribute,
   JSXElement,
   JSXOpeningElement,
-  Node,
-  LogicalExpression
+  Node
 } from "@babel/types";
 
 const parseOptions: parser.ParserOptions = {
@@ -174,50 +184,38 @@ const isComponent = (
 const isDefined = (number: number | null | undefined): number is number =>
   typeof number !== "undefined" && number !== null;
 
-const fillLogicalExpressionIdentifiers = (
-  expression: LogicalExpression,
-  identifiers: string[]
-) => {
-  if (expression.left.type === "Identifier") {
-    identifiers.push(expression.left.name);
-  } else if (expression.left.type === "LogicalExpression") {
-    fillLogicalExpressionIdentifiers(expression.left, identifiers);
-  }
-
-  if (expression.right.type === "Identifier") {
-    identifiers.push(expression.right.name);
-  } else if (expression.right.type === "LogicalExpression") {
-    fillLogicalExpressionIdentifiers(expression.right, identifiers);
-  }
-};
-
-const fillConditionalExpressionIdentifiers = (
-  expression: ConditionalExpression,
-  identifiers: string[]
-) => {
-  if (expression.test.type === "Identifier") {
-    identifiers.push(expression.test.name);
-  } else if (expression.test.type === "LogicalExpression") {
-    fillLogicalExpressionIdentifiers(expression.test, identifiers);
-  }
-  return identifiers;
-};
-
 const fillExpressionIdentifiers = (
-  expression: ConditionalExpression | LogicalExpression,
+  expression: Expression,
   identifiers: string[]
 ) => {
-  if (expression.type === "ConditionalExpression") {
-    fillConditionalExpressionIdentifiers(expression, identifiers);
-  } else if (expression.type === "LogicalExpression") {
-    fillLogicalExpressionIdentifiers(expression, identifiers);
+  if (isIdentifier(expression) && !identifiers.includes(expression.name)) {
+    identifiers.push(expression.name);
+  } else if (
+    isOptionalMemberExpression(expression) ||
+    isMemberExpression(expression)
+  ) {
+    fillExpressionIdentifiers(expression.object, identifiers);
+    if (expression.computed && isExpression(expression.property)) {
+      fillExpressionIdentifiers(expression.property, identifiers);
+    }
+  } else if (isCallExpression(expression) && isExpression(expression.callee)) {
+    fillExpressionIdentifiers(expression.callee, identifiers);
+    for (const argument of expression.arguments) {
+      if (isExpression(argument)) {
+        fillExpressionIdentifiers(argument, identifiers);
+      }
+    }
+  } else if (isConditionalExpression(expression)) {
+    fillExpressionIdentifiers(expression.test, identifiers);
+  } else if (isLogicalExpression(expression)) {
+    fillExpressionIdentifiers(expression.left, identifiers);
+    fillExpressionIdentifiers(expression.right, identifiers);
+  } else if (!isStringLiteral(expression)) {
+    console.log("Unknown expression:", expression);
   }
 };
 
-const buildExpressionText = (
-  code: string,
-  expression: ConditionalExpression | LogicalExpression
-) => {
+const buildExpressionText = (code: string, expression: Expression) => {
   if (isDefined(expression.start) && isDefined(expression.end)) {
     const identifiers: string[] = [];
     fillExpressionIdentifiers(expression, identifiers);
@@ -229,13 +227,11 @@ const buildExpressionText = (
   return "";
 };
 
-const extractClassNameAttribute = (jsxOpeningNode: JSXOpeningElement) => {
-  const attributes = jsxOpeningNode.attributes;
-  return attributes.find(
+const extractClassNameAttribute = (jsxOpeningNode: JSXOpeningElement) =>
+  jsxOpeningNode.attributes.find(
     attribute =>
-      attribute.type === "JSXAttribute" && attribute.name?.name === "className"
+      isJSXAttribute(attribute) && attribute.name.name === "className"
   ) as JSXAttribute | undefined;
-};
 
 const extractClassName = (
   code: string,
@@ -247,20 +243,14 @@ const extractClassName = (
   }
   if (classNameAttribute.value.type === "JSXExpressionContainer") {
     const expression = classNameAttribute.value.expression;
-    if (
-      expression.type === "ConditionalExpression" ||
-      expression.type === "LogicalExpression"
-    ) {
-      return buildExpressionText(code, expression);
+    if (isJSXEmptyExpression(expression)) {
+      return "";
     }
-    if (expression.type === "TemplateLiteral") {
-      const conditionalOrLogicalExpressions = expression.expressions.filter(
-        expr =>
-          expr.type === "ConditionalExpression" ||
-          expr.type === "LogicalExpression"
-      ) as ConditionalExpression[];
-      const expressionText = conditionalOrLogicalExpressions
-        .map(expr => buildExpressionText(code, expr))
+
+    if (isTemplateLiteral(expression)) {
+      const expressionText = expression.expressions
+        .filter(expr => isExpression(expr))
+        .map(expr => buildExpressionText(code, expr as Expression))
         .join(" ");
       const quasisText = expression.quasis
         .map(quasi => quasi.value.raw?.trim() || "")
@@ -268,6 +258,8 @@ const extractClassName = (
         .join(" ");
       return `${expressionText} ${quasisText}`;
     }
+
+    return buildExpressionText(code, expression);
   }
   return "";
 };
@@ -403,7 +395,7 @@ export const generateDeclarations = ({
           : `(${component.type})`
       }\`${component.className}\``;
     })
-    .join("\n");
+    .join("\n\n");
 
 export const getUnderlyingComponent = (
   code: string,
