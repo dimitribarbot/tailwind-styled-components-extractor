@@ -1,7 +1,7 @@
 {
   "name": "tailwind-styled-components-extractor",
   "displayName": "Tailwind Styled-Components Extractor",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Generate tailwind styled-components from JSX tags. A faster tailwind styled-component workflow.",
   "license": "MIT",
   "publisher": "dimitribarbot",
@@ -31,28 +31,59 @@
     "test:ci": "node ./dist/test/runTest.js"
   },
   "activationEvents": [
-    "onCommand:tailwindStyledComponentsExtractor.extract",
-    "onCommand:tailwindStyledComponentsExtractor.extractExported"
+    "workspaceContains:package.json"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "tailwindStyledComponentsExtractor.extractToClipboard",
-        "title": "Extract tailwind styled-components to clipboard"
+        "command": "tailwindStyledComponentsExtractor.extractCurrentToSameFile",
+        "title": "Tailwind Styled: Extract Here"
       },
       {
-        "command": "tailwindStyledComponentsExtractor.extractExportedToClipboard",
-        "title": "Extract exported tailwind styled-components to clipboard"
+        "command": "tailwindStyledComponentsExtractor.extractCurrentToSeparateFile",
+        "title": "Tailwind Styled: Extract to File"
       },
       {
-        "command": "tailwindStyledComponentsExtractor.extractToSameFile",
-        "title": "Extract tailwind styled-components to the same file"
+        "command": "tailwindStyledComponentsExtractor.extractUnboundToClipboard",
+        "title": "Tailwind Styled: Extract Unbound Components to Clipboard"
       },
       {
-        "command": "tailwindStyledComponentsExtractor.extractToSeparateFile",
-        "title": "Extract exported tailwind styled-components to a separate file"
+        "command": "tailwindStyledComponentsExtractor.extractExportedUnboundToClipboard",
+        "title": "Tailwind Styled: Extract Exported Unbound Components to Clipboard"
+      },
+      {
+        "command": "tailwindStyledComponentsExtractor.extractUnboundToSameFile",
+        "title": "Tailwind Styled: Extract Unbounds Here"
+      },
+      {
+        "command": "tailwindStyledComponentsExtractor.extractUnboundToSeparateFile",
+        "title": "Tailwind Styled: Extract Unbounds to File"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "isInJSX",
+          "command": "tailwindStyledComponentsExtractor.extractCurrentToSameFile",
+          "group": "2_extract@1"
+        },
+        {
+          "when": "isInJSX",
+          "command": "tailwindStyledComponentsExtractor.extractCurrentToSeparateFile",
+          "group": "2_extract@2"
+        },
+        {
+          "when": "hasUnboundComponents",
+          "command": "tailwindStyledComponentsExtractor.extractUnboundToSameFile",
+          "group": "2_extract@3"
+        },
+        {
+          "when": "hasUnboundComponents",
+          "command": "tailwindStyledComponentsExtractor.extractUnboundToSeparateFile",
+          "group": "2_extract@4"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
       "title": "Tailwind Styled-Components Extractor configuration",

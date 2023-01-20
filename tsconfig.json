@@ -21,6 +21,7 @@
   "exclude": [
     "node_modules",
     ".vscode-test",
+    "dist/**/*.*",
     "src/**/*.test.ts",
     "src/test/suite/component/*.*"
   ]

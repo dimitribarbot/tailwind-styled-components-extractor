@@ -1,9 +1,14 @@
 import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
-import type {
+import {
   ConditionalExpression,
+  isJSXClosingElement,
+  isJSXIdentifier,
+  isJSXOpeningElement,
   JSXAttribute,
+  JSXElement,
   JSXOpeningElement,
+  Node,
   LogicalExpression
 } from "@babel/types";
 
@@ -23,16 +28,148 @@ const parseOptions: parser.ParserOptions = {
   ]
 };
 
-export interface ClassNameOffsets {
+const knownJSXTags = [
+  "a",
+  "abbr",
+  "address",
+  "area",
+  "article",
+  "aside",
+  "audio",
+  "b",
+  "base",
+  "bdi",
+  "bdo",
+  "big",
+  "blockquote",
+  "body",
+  "br",
+  "button",
+  "canvas",
+  "caption",
+  "center",
+  "cite",
+  "code",
+  "col",
+  "colgroup",
+  "data",
+  "datalist",
+  "dd",
+  "del",
+  "details",
+  "dfn",
+  "dialog",
+  "div",
+  "dl",
+  "dt",
+  "em",
+  "embed",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "head",
+  "header",
+  "hgroup",
+  "hr",
+  "html",
+  "i",
+  "iframe",
+  "img",
+  "input",
+  "ins",
+  "kbd",
+  "keygen",
+  "label",
+  "legend",
+  "li",
+  "link",
+  "main",
+  "map",
+  "mark",
+  "menu",
+  "menuitem",
+  "meta",
+  "meter",
+  "nav",
+  "noscript",
+  "object",
+  "ol",
+  "optgroup",
+  "option",
+  "output",
+  "p",
+  "param",
+  "picture",
+  "pre",
+  "progress",
+  "q",
+  "rp",
+  "rt",
+  "ruby",
+  "s",
+  "samp",
+  "slot",
+  "script",
+  "section",
+  "select",
+  "small",
+  "source",
+  "span",
+  "strong",
+  "style",
+  "sub",
+  "summary",
+  "sup",
+  "table",
+  "template",
+  "tbody",
+  "td",
+  "textarea",
+  "tfoot",
+  "th",
+  "thead",
+  "time",
+  "title",
+  "tr",
+  "track",
+  "u",
+  "ul",
+  "var",
+  "video",
+  "wbr",
+  "webview"
+];
+
+export interface Offsets {
   start: number;
   end: number;
 }
 
-interface UnboundComponent {
+export interface UnboundComponent {
   name: string;
   className?: string;
-  classNameOffsets?: ClassNameOffsets;
+  classNameOffsets?: Offsets;
 }
+
+export interface Component extends UnboundComponent {
+  type: string;
+  selfClosing: boolean;
+  openingTagOffsets: Offsets;
+  closingTagOffsets?: Offsets;
+}
+
+const isComponent = (
+  component: UnboundComponent | Component
+): component is Component =>
+  typeof (component as Component).type !== "undefined";
 
 const isDefined = (number: number | null | undefined): number is number =>
   typeof number !== "undefined" && number !== null;
@@ -100,10 +237,13 @@ const extractClassNameAttribute = (jsxOpeningNode: JSXOpeningElement) => {
   ) as JSXAttribute | undefined;
 };
 
-const extractClassName = (code: string, classNameAttribute: JSXAttribute) => {
-  if (!classNameAttribute.value) return "";
+const extractClassName = (
+  code: string,
+  classNameAttribute: JSXAttribute | null | undefined
+) => {
+  if (!classNameAttribute?.value) return "";
   if (classNameAttribute.value.type === "StringLiteral") {
-    return classNameAttribute.value.value;
+    return classNameAttribute.value.value?.trim() || "";
   }
   if (classNameAttribute.value.type === "JSXExpressionContainer") {
     const expression = classNameAttribute.value.expression;
@@ -132,13 +272,74 @@ const extractClassName = (code: string, classNameAttribute: JSXAttribute) => {
   return "";
 };
 
-const sortClassNameOffsets = (
-  offsetsA: ClassNameOffsets,
-  offsetsB: ClassNameOffsets
-) => {
+const getNodeOffsets = (node: Node | null | undefined) => {
+  if (node && isDefined(node.start) && isDefined(node.end)) {
+    return {
+      start: node.start,
+      end: node.end
+    };
+  }
+  return undefined;
+};
+
+const sortOffsets = (offsetsA: Offsets, offsetsB: Offsets) => {
   if (offsetsA.start < offsetsB.start) return 1;
   if (offsetsA.start > offsetsB.start) return -1;
   return 0;
+};
+
+const isKnownJSXTag = (tagName: string) => knownJSXTags.includes(tagName);
+
+const getUnderlyingJSXNode = (
+  code: string,
+  index: number
+): JSXElement | null => {
+  const ast = parser.parse(code, parseOptions);
+
+  let deepestNode: Node | null = null;
+
+  traverse(ast, {
+    enter(path) {
+      const node = path.node;
+
+      if (
+        isDefined(node.start) &&
+        node.start <= index &&
+        isDefined(node.end) &&
+        node.end >= index &&
+        (isJSXOpeningElement(node) || isJSXClosingElement(node)) &&
+        isJSXIdentifier(node.name)
+      ) {
+        deepestNode = path.parentPath.node;
+      }
+    }
+  });
+
+  return deepestNode;
+};
+
+export const hasUnboundComponents = (code: string) => {
+  const ast = parser.parse(code, parseOptions);
+
+  let hasUnboundComponents = false;
+
+  traverse(ast, {
+    enter(path) {
+      const node = path.node;
+
+      if (isJSXIdentifier(node) && isJSXOpeningElement(path.parentPath?.node)) {
+        if (isKnownJSXTag(node.name)) {
+          return;
+        }
+        if (!path.scope.hasBinding(node.name)) {
+          hasUnboundComponents = true;
+          path.stop();
+        }
+      }
+    }
+  });
+
+  return hasUnboundComponents;
 };
 
 export const collectUnboundComponents = (code: string) => {
@@ -150,45 +351,22 @@ export const collectUnboundComponents = (code: string) => {
     enter(path) {
       const node = path.node;
 
-      switch (node.type) {
-        case "JSXIdentifier": {
-          if (path.parentPath?.node.type !== "JSXOpeningElement") {
-            return;
-          }
-          const isComponent = /[A-Z]/.test(node.name);
-          if (!isComponent) {
-            return;
-          }
-          if (!path.scope.hasBinding(node.name)) {
-            const jsxOpeningNode = path.parentPath.node;
-            const classNameAttribute =
-              extractClassNameAttribute(jsxOpeningNode);
-            if (
-              classNameAttribute &&
-              isDefined(classNameAttribute.start) &&
-              isDefined(classNameAttribute.end)
-            ) {
-              const className = extractClassName(code, classNameAttribute);
-              unboundJSXIdentifiers.add({
-                name: node.name,
-                className,
-                classNameOffsets: {
-                  start: classNameAttribute.start,
-                  end: classNameAttribute.end
-                }
-              });
-            } else {
-              unboundJSXIdentifiers.add({
-                name: node.name,
-                className: ""
-              });
-            }
-          }
-
-          break;
+      if (isJSXIdentifier(node) && isJSXOpeningElement(path.parentPath?.node)) {
+        if (isKnownJSXTag(node.name)) {
+          return;
         }
-        default:
-          break;
+
+        if (!path.scope.hasBinding(node.name)) {
+          const jsxOpeningNode = path.parentPath.node;
+          const classNameAttribute = extractClassNameAttribute(jsxOpeningNode);
+          const className = extractClassName(code, classNameAttribute);
+          const classNameOffsets = getNodeOffsets(classNameAttribute);
+          unboundJSXIdentifiers.add({
+            name: node.name,
+            className,
+            classNameOffsets
+          });
+        }
       }
     }
   });
@@ -201,25 +379,61 @@ export const extractUnboundComponentNames = (
 ) => unboundComponents?.map(component => component.name);
 
 export const extractUnboundComponentClassNameOffsets = (
-  unboundComponents: UnboundComponent[]
+  unboundComponents: Component[] | UnboundComponent[]
 ) =>
   unboundComponents
     ?.filter(component => !!component.classNameOffsets)
-    .map(component => component.classNameOffsets as ClassNameOffsets)
-    .sort(sortClassNameOffsets) || [];
+    .map(component => component.classNameOffsets as Offsets)
+    .sort(sortOffsets) || [];
 
 export const generateDeclarations = ({
-  unboundComponents,
+  components,
   exportIdentifier
 }: {
-  unboundComponents: UnboundComponent[];
+  components: Component[] | UnboundComponent[];
   exportIdentifier: boolean;
-}): string => {
-  return unboundComponents
+}): string =>
+  components
     .map(component => {
-      return `${exportIdentifier ? "export " : ""}const ${
-        component.name
-      } = tw.div\`${component.className}\``;
+      const isBasicComponent =
+        !isComponent(component) || isKnownJSXTag(component.type);
+      return `${exportIdentifier ? "export " : ""}const ${component.name} = tw${
+        isBasicComponent
+          ? `.${isComponent(component) ? component.type : "div"}`
+          : `(${component.type})`
+      }\`${component.className}\``;
     })
     .join("\n");
+
+export const getUnderlyingComponent = (
+  code: string,
+  index: number
+): Component | undefined => {
+  const node = getUnderlyingJSXNode(code, index);
+  if (!node || !isJSXIdentifier(node.openingElement?.name)) {
+    return;
+  }
+
+  const openingTagOffsets = getNodeOffsets(node.openingElement.name);
+  if (!openingTagOffsets) {
+    return;
+  }
+
+  const classNameAttribute = extractClassNameAttribute(node.openingElement);
+  const className = extractClassName(code, classNameAttribute);
+  const classNameOffsets = getNodeOffsets(classNameAttribute);
+  const closingTagOffsets = getNodeOffsets(node.closingElement?.name);
+
+  return {
+    name: "",
+    type: node.openingElement.name.name,
+    selfClosing: !!node.openingElement.selfClosing,
+    openingTagOffsets,
+    closingTagOffsets,
+    className,
+    classNameOffsets
+  };
 };
+
+export const isInJSX = (code: string, index: number): boolean =>
+  !!getUnderlyingJSXNode(code, index);

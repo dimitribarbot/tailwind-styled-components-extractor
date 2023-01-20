@@ -1,6 +1,6 @@
 import * as path from "path/posix";
 
-export function relativeImportPathFromFile(from: string, to: string) {
+export const relativeImportPathFromFile = (from: string, to: string) => {
   // TODO is this OK on Windows?
   let relative = path.relative(path.dirname(from), to);
 
@@ -9,14 +9,14 @@ export function relativeImportPathFromFile(from: string, to: string) {
   }
 
   return stripExtension(relative);
-}
+};
 
-export function stripExtension(inputPath: string) {
+export const stripExtension = (inputPath: string) => {
   const parsed = path.parse(inputPath);
   return `${parsed.dir}/${parsed.name}`; // removes extension
-}
+};
 
-export function getExtension(inputPath: string) {
+export const getExtension = (inputPath: string) => {
   const parsed = path.parse(inputPath);
   return parsed.ext;
-}
+};

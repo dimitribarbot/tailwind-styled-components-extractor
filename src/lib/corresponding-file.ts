@@ -2,11 +2,11 @@ import * as path from "path/posix";
 
 import { getExtension, stripExtension } from "./path-utils";
 
-export function getCorrespondingStyleFile(
+export const getCorrespondingStyleFile = (
   inputPath: string,
   outputFile: string,
   inputFileRegex: string
-) {
+) => {
   const basePath = path.dirname(inputPath);
   const filename = stripExtension(path.basename(inputPath));
   const extension = getExtension(path.basename(inputPath));
@@ -38,4 +38,4 @@ export function getCorrespondingStyleFile(
   const outputExtension = extension.match(/tsx?/) ? "ts" : "js";
 
   return path.join(basePath, `${outputFilename}.${outputExtension}`);
-}
+};

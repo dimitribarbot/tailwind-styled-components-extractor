@@ -3,26 +3,204 @@ import * as vscode from "vscode";
 import { getCorrespondingStyleFile } from "./lib/corresponding-file";
 import {
   collectUnboundComponents,
+  Component,
   extractUnboundComponentClassNameOffsets,
   extractUnboundComponentNames,
-  generateDeclarations
+  generateDeclarations,
+  getUnderlyingComponent,
+  hasUnboundComponents,
+  isInJSX,
+  UnboundComponent
 } from "./lib/extractor";
 import { getTailwindStyledImportInsertion } from "./lib/imports";
 import {
   insertTailwindStyledImport,
   insertStyles,
   modifyImports,
-  removeClassNames
+  removeClassNames,
+  executeFormatCommand,
+  renameTag
 } from "./lib/modify-vscode-editor";
-import { openFileInEditor } from "./lib/vscode-utils";
+import { askForName, openFileInEditor } from "./lib/vscode-utils";
 
 const supportedLangs = ["javascript", "javascriptreact", "typescriptreact"];
 
 type ExtractType =
-  | "extractToClipboard"
-  | "extractExportedToClipboard"
-  | "extractToSameFile"
-  | "extractToSeparateFile";
+  | "extractCurrentToSameFile"
+  | "extractCurrentToSeparateFile"
+  | "extractUnboundToClipboard"
+  | "extractExportedUnboundToClipboard"
+  | "extractUnboundToSameFile"
+  | "extractUnboundToSeparateFile";
+
+const setContextForMenus = () => {
+  const editor = vscode.window.activeTextEditor;
+  if (
+    !editor ||
+    (editor.document.languageId !== "javascriptreact" &&
+      editor.document.languageId !== "typescriptreact")
+  ) {
+    vscode.commands.executeCommand("setContext", "isJSX", false);
+    vscode.commands.executeCommand("setContext", "hasUnboundComponents", false);
+  } else {
+    const text = editor.document.getText();
+    const offset = editor.document.offsetAt(editor.selection.active);
+
+    const unboundComponentAreDefined = hasUnboundComponents(text);
+    const isOffsetInJSX = isInJSX(text, offset);
+
+    vscode.commands.executeCommand(
+      "setContext",
+      "hasUnboundComponents",
+      unboundComponentAreDefined
+    );
+
+    vscode.commands.executeCommand("setContext", "isInJSX", isOffsetInJSX);
+  }
+};
+
+const extractCurrentToSeparateFile = async (
+  editor: vscode.TextEditor,
+  config: vscode.WorkspaceConfiguration,
+  component: Component,
+  declarations: string
+) => {
+  const styleFile = getCorrespondingStyleFile(
+    editor.document.uri.path,
+    config.get("separateFile.outputFile", "$name.styles"),
+    config.get(
+      "tailwindStyledComponentsExtractor.separateFile.advanced.inputFileRegex",
+      ""
+    )
+  );
+  if (!styleFile) {
+    vscode.window.showWarningMessage(
+      "[SCE] This file does not match the pattern in your configuration."
+    );
+    return;
+  }
+
+  await renameTag(
+    editor,
+    component.name,
+    component.closingTagOffsets ? [component.closingTagOffsets] : []
+  );
+  await removeClassNames(
+    editor,
+    component.classNameOffsets ? [component.classNameOffsets] : []
+  );
+  await renameTag(editor, component.name, [component.openingTagOffsets]);
+  await modifyImports(editor, styleFile, [component.name]);
+  await executeFormatCommand();
+
+  const styleFileEditor = await openFileInEditor(styleFile);
+  await insertStyles(styleFileEditor, declarations);
+  await insertTailwindStyledImport(styleFileEditor);
+  await executeFormatCommand();
+
+  await editor.document.save();
+  await styleFileEditor.document.save();
+};
+
+const extractCurrentToSameFile = async (
+  editor: vscode.TextEditor,
+  component: Component,
+  declarations: string
+) => {
+  await renameTag(
+    editor,
+    component.name,
+    component.closingTagOffsets ? [component.closingTagOffsets] : []
+  );
+  await removeClassNames(
+    editor,
+    component.classNameOffsets ? [component.classNameOffsets] : []
+  );
+  await renameTag(editor, component.name, [component.openingTagOffsets]);
+
+  await insertStyles(editor, declarations);
+  await insertTailwindStyledImport(editor);
+  await executeFormatCommand();
+
+  await editor.document.save();
+};
+
+const extractUnboundToClipboard = async (
+  editor: vscode.TextEditor,
+  config: vscode.WorkspaceConfiguration,
+  components: UnboundComponent[],
+  declarations: string
+) => {
+  let clipboardText = declarations;
+  if (config.get("addImportStatement", true)) {
+    const tailwindStyledImportInsertion = getTailwindStyledImportInsertion(
+      editor.document.getText()
+    );
+    if (tailwindStyledImportInsertion) {
+      clipboardText =
+        tailwindStyledImportInsertion.insertionText + declarations;
+    }
+  }
+
+  await vscode.env.clipboard.writeText(clipboardText);
+
+  vscode.window.showInformationMessage(
+    `[SCE] Copied to clipboard! (Found: ${components.length}) `
+  );
+};
+
+const extractUnboundToSeparateFile = async (
+  editor: vscode.TextEditor,
+  config: vscode.WorkspaceConfiguration,
+  components: UnboundComponent[],
+  declarations: string
+) => {
+  const styleFile = getCorrespondingStyleFile(
+    editor.document.uri.path,
+    config.get("separateFile.outputFile", "$name.styles"),
+    config.get(
+      "tailwindStyledComponentsExtractor.separateFile.advanced.inputFileRegex",
+      ""
+    )
+  );
+  if (!styleFile) {
+    vscode.window.showWarningMessage(
+      "[SCE] This file does not match the pattern in your configuration."
+    );
+    return;
+  }
+
+  const unboundComponentNames = extractUnboundComponentNames(components);
+  const unboundComponentClassNameOffsets =
+    extractUnboundComponentClassNameOffsets(components);
+  await removeClassNames(editor, unboundComponentClassNameOffsets);
+  await modifyImports(editor, styleFile, unboundComponentNames);
+  await executeFormatCommand();
+
+  const styleFileEditor = await openFileInEditor(styleFile);
+  await insertStyles(styleFileEditor, declarations);
+  await insertTailwindStyledImport(styleFileEditor);
+  await executeFormatCommand();
+
+  await editor.document.save();
+  await styleFileEditor.document.save();
+};
+
+const extractUnboundToSameFile = async (
+  editor: vscode.TextEditor,
+  components: UnboundComponent[],
+  declarations: string
+) => {
+  const unboundComponentClassNameOffsets =
+    extractUnboundComponentClassNameOffsets(components);
+  await removeClassNames(editor, unboundComponentClassNameOffsets);
+
+  await insertStyles(editor, declarations);
+  await insertTailwindStyledImport(editor);
+  await executeFormatCommand();
+
+  await editor.document.save();
+};
 
 const extract = async (type: ExtractType): Promise<void> => {
   try {
@@ -46,77 +224,81 @@ const extract = async (type: ExtractType): Promise<void> => {
     );
 
     const text = editor.document.getText();
-    const unboundComponents = collectUnboundComponents(text);
-    if (!unboundComponents.length) {
-      vscode.window.showWarningMessage(
-        "[SCE] Nothing to extract: There are no unbound components"
-      );
-      return;
-    }
+    const offset = editor.document.offsetAt(editor.selection.active);
 
     const exportIdentifier =
-      type == "extractExportedToClipboard" || type == "extractToSeparateFile";
+      type == "extractCurrentToSeparateFile" ||
+      type == "extractExportedUnboundToClipboard" ||
+      type == "extractUnboundToSeparateFile";
 
-    const declarations = generateDeclarations({
-      unboundComponents,
-      exportIdentifier
-    });
-
-    if (type == "extractToClipboard" || type == "extractExportedToClipboard") {
-      let clipboardText = declarations;
-      if (config.get("addImportStatement", true)) {
-        const tailwindStyledImportInsertion = getTailwindStyledImportInsertion(
-          editor.document.getText()
-        );
-        if (tailwindStyledImportInsertion) {
-          clipboardText =
-            tailwindStyledImportInsertion.insertionText + declarations;
-        }
-      }
-
-      await vscode.env.clipboard.writeText(clipboardText);
-
-      vscode.window.showInformationMessage(
-        `[SCE] Copied to clipboard! (Found: ${unboundComponents.length}) `
-      );
-    } else if (type == "extractToSeparateFile") {
-      const styleFile = getCorrespondingStyleFile(
-        editor.document.uri.path,
-        config.get("separateFile.outputFile", "$name.styles"),
-        config.get(
-          "tailwindStyledComponentsExtractor.separateFile.advanced.inputFileRegex",
-          ""
-        )
-      );
-      if (!styleFile) {
+    if (
+      type === "extractCurrentToSameFile" ||
+      type === "extractCurrentToSeparateFile"
+    ) {
+      const component = getUnderlyingComponent(text, offset);
+      if (!component) {
         vscode.window.showWarningMessage(
-          "[SCE] This file does not match the pattern in your configuration."
+          "[SCE] Nothing to extract: There is no underlying component"
         );
         return;
       }
 
-      const unboundComponentNames =
-        extractUnboundComponentNames(unboundComponents);
-      const unboundComponentClassNameOffsets =
-        extractUnboundComponentClassNameOffsets(unboundComponents);
-      await removeClassNames(editor, unboundComponentClassNameOffsets);
-      await modifyImports(editor, styleFile, unboundComponentNames);
+      const componentName = await askForName();
+      if (!componentName) {
+        return;
+      }
 
-      const styleFileEditor = await openFileInEditor(styleFile);
-      await insertStyles(styleFileEditor, declarations);
-      await insertTailwindStyledImport(styleFileEditor);
+      component.name = componentName;
 
-      await editor.document.save();
-      await styleFileEditor.document.save();
-    } else if (type == "extractToSameFile") {
-      const unboundComponentClassNameOffsets =
-        extractUnboundComponentClassNameOffsets(unboundComponents);
-      await removeClassNames(editor, unboundComponentClassNameOffsets);
+      const declarations = generateDeclarations({
+        components: [component],
+        exportIdentifier
+      });
 
-      await insertStyles(editor, declarations);
-      await insertTailwindStyledImport(editor);
+      if (type == "extractCurrentToSeparateFile") {
+        await extractCurrentToSeparateFile(
+          editor,
+          config,
+          component,
+          declarations
+        );
+      } else if (type == "extractCurrentToSameFile") {
+        await extractCurrentToSameFile(editor, component, declarations);
+      }
+    } else {
+      const components = collectUnboundComponents(text);
+      if (!components.length) {
+        vscode.window.showWarningMessage(
+          "[SCE] Nothing to extract: There are no unbound components"
+        );
+        return;
+      }
 
-      await editor.document.save();
+      const declarations = generateDeclarations({
+        components,
+        exportIdentifier
+      });
+
+      if (
+        type == "extractUnboundToClipboard" ||
+        type == "extractExportedUnboundToClipboard"
+      ) {
+        await extractUnboundToClipboard(
+          editor,
+          config,
+          components,
+          declarations
+        );
+      } else if (type == "extractUnboundToSeparateFile") {
+        await extractUnboundToSeparateFile(
+          editor,
+          config,
+          components,
+          declarations
+        );
+      } else if (type == "extractUnboundToSameFile") {
+        await extractUnboundToSameFile(editor, components, declarations);
+      }
     }
   } catch (e) {
     if (e instanceof Error && Object.getPrototypeOf(e).name === "SyntaxError") {
@@ -132,21 +314,31 @@ const extract = async (type: ExtractType): Promise<void> => {
 
 export const activate = (context: vscode.ExtensionContext) => {
   context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(setContextForMenus),
+    vscode.window.onDidChangeTextEditorSelection(setContextForMenus),
     vscode.commands.registerCommand(
-      "tailwindStyledComponentsExtractor.extractToClipboard",
-      () => extract("extractToClipboard")
+      "tailwindStyledComponentsExtractor.extractCurrentToSameFile",
+      () => extract("extractCurrentToSameFile")
     ),
     vscode.commands.registerCommand(
-      "tailwindStyledComponentsExtractor.extractExportedToClipboard",
-      () => extract("extractExportedToClipboard")
+      "tailwindStyledComponentsExtractor.extractCurrentToSeparateFile",
+      () => extract("extractCurrentToSeparateFile")
     ),
     vscode.commands.registerCommand(
-      "tailwindStyledComponentsExtractor.extractToSameFile",
-      () => extract("extractToSameFile")
+      "tailwindStyledComponentsExtractor.extractUnboundToClipboard",
+      () => extract("extractUnboundToClipboard")
     ),
     vscode.commands.registerCommand(
-      "tailwindStyledComponentsExtractor.extractToSeparateFile",
-      () => extract("extractToSeparateFile")
+      "tailwindStyledComponentsExtractor.extractExportedUnboundToClipboard",
+      () => extract("extractExportedUnboundToClipboard")
+    ),
+    vscode.commands.registerCommand(
+      "tailwindStyledComponentsExtractor.extractUnboundToSameFile",
+      () => extract("extractUnboundToSameFile")
+    ),
+    vscode.commands.registerCommand(
+      "tailwindStyledComponentsExtractor.extractUnboundToSeparateFile",
+      () => extract("extractUnboundToSeparateFile")
     )
   );
 };

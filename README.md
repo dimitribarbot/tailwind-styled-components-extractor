@@ -1,6 +1,6 @@
 # Styled-Components Extractor
 
-Generate [tailwind-styled-components](https://www.npmjs.com/package/tailwind-styled-components) definitions from JSX tags. 
+Generate [tailwind-styled-components](https://www.npmjs.com/package/tailwind-styled-components) definitions from JSX tags.
 This extension is based on the [existing one for styled-components](https://marketplace.visualstudio.com/items?itemName=FallenMax.styled-components-extractor).
 
 This extension supports extracting definitions to several different locations:
@@ -18,10 +18,12 @@ For maximum productivity, you can combine this extension with [Emmet](https://em
 
 Use one of the four VS Code commands provided by this extension:
 
-- `Extract tailwind-styled-components to the same file` - Generates definitions for all unbound tailwind styled components and appends them to end of the current JSX file.
-- `Extract exported tailwind-styled-components to a separate file` - Generates definitions for all unbound tailwind styled components and appends them to end of another file. Automatically imports the new components in the JSX file. The file the components are appended to is controlled by the `separateFile.outputFile` setting.
-- `Extract tailwind-styled-components to clipboard` - Generates definitions for all unbound tailwind styled components and copies them to the clipboard.
-- `Extract exported tailwind-styled-components to clipboard` - Same as previous, but includes the `export` keyword in each definition.
+- `Extract current JSX to tailwind-styled-components to the same file` - Generates tailwind styled component definition for the underlying selected JSX element and appends it to end of the current JSX file.
+- `Extract current JSX to tailwind-styled-components to a separate file` - Generates tailwind styled component definition for the underlying selected JSX element and appends it to end of another file. Automatically imports the new component in the JSX file. The file the component is appended to is controlled by the `separateFile.outputFile` setting.
+- `Extract unbound tailwind-styled-components to the same file` - Generates definitions for all unbound tailwind styled components and appends them to end of the current JSX file.
+- `Extract exported unbound tailwind-styled-components to a separate file` - Generates definitions for all unbound tailwind styled components and appends them to end of another file. Automatically imports the new components in the JSX file. The file the components are appended to is controlled by the `separateFile.outputFile` setting.
+- `Extract unbound tailwind-styled-components to clipboard` - Generates definitions for all unbound tailwind styled components and copies them to the clipboard.
+- `Extract exported unbound tailwind-styled-components to clipboard` - Same as previous, but includes the `export` keyword in each definition.
 
 Optionally, you can bind these commands to shortcuts via `File -> Preferences -> Keyboard Shortcuts`.
 
@@ -31,12 +33,12 @@ Example:
 [
   {
     "key": "cmd+alt+e",
-    "command": "tailwindStyledComponentsExtractor.extractToSeparateFile",
+    "command": "tailwindStyledComponentsExtractor.extractUnboundToSeparateFile",
     "when": "editorFocus"
   },
   {
-    "key": "ctrl+alt+e",
-    "command": "tailwindStyledComponentsExtractor.extractExported",
+    "key": "ctrl+alt+f",
+    "command": "tailwindStyledComponentsExtractor.extractExportedUnboundToClipboard",
     "when": "editorFocus"
   }
 ]
