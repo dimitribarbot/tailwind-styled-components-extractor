@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { Offsets } from "./extractor";
+import { Component, Offsets, UnboundComponent } from "./extractor";
 import {
   getImportInsertion,
   getTailwindStyledImportInsertion
@@ -8,15 +8,19 @@ import {
 import { relativeImportPathFromFile } from "./path-utils";
 import { endOfFile } from "./vscode-utils";
 
+const convertOffsetsToRange = (editor: vscode.TextEditor, offsets: Offsets) => {
+  const startPosition = editor.document.positionAt(offsets.start);
+  const endPosition = editor.document.positionAt(offsets.end);
+  return new vscode.Range(startPosition, endPosition);
+};
+
 const convertOffsetsToRanges = (
   editor: vscode.TextEditor,
   offsetsToConvert: Offsets[]
-) =>
-  offsetsToConvert.map(offsets => {
-    const startPosition = editor.document.positionAt(offsets.start);
-    const endPosition = editor.document.positionAt(offsets.end);
-    return new vscode.Range(startPosition, endPosition);
-  });
+) => offsetsToConvert.map(offsets => convertOffsetsToRange(editor, offsets));
+
+const generatePropAttributes = (propNames: string[]) =>
+  propNames.map((propName: string) => `${propName}={${propName}}`).join(" ");
 
 export const executeFormatCommand = () =>
   vscode.commands.executeCommand("editor.action.formatDocument");
@@ -57,19 +61,22 @@ export const renameTag = async (
   });
 };
 
-export const removeClassNames = async (
+export const replaceComponentClassNamesWithPropAttributes = async (
   editor: vscode.TextEditor,
-  classNameOffsetsToRemove: Offsets[]
+  components: Component[] | UnboundComponent[]
 ) => {
-  const classNameRangesToRemove = convertOffsetsToRanges(
-    editor,
-    classNameOffsetsToRemove
-  );
-
   await editor.edit(editBuilder => {
-    classNameRangesToRemove.forEach(classNameRangeToRemove => {
-      editBuilder.delete(classNameRangeToRemove);
-    });
+    for (const component of components) {
+      if (component.classNameOffsets) {
+        const propAttributes = generatePropAttributes(component.propNames);
+        const classNameRangeToRemove = convertOffsetsToRange(
+          editor,
+          component.classNameOffsets
+        );
+
+        editBuilder.replace(classNameRangeToRemove, propAttributes);
+      }
+    }
   });
 };
 

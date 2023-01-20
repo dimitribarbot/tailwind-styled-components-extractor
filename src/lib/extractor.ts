@@ -18,6 +18,7 @@ import {
   isTemplateLiteral,
   JSXAttribute,
   JSXElement,
+  JSXIdentifier,
   JSXOpeningElement,
   Node
 } from "@babel/types";
@@ -165,6 +166,7 @@ export interface Offsets {
 
 export interface UnboundComponent {
   name: string;
+  propNames: string[];
   className?: string;
   classNameOffsets?: Offsets;
 }
@@ -188,8 +190,10 @@ const fillExpressionIdentifiers = (
   expression: Expression,
   identifiers: string[]
 ) => {
-  if (isIdentifier(expression) && !identifiers.includes(expression.name)) {
-    identifiers.push(expression.name);
+  if (isIdentifier(expression)) {
+    if (!identifiers.includes(expression.name)) {
+      identifiers.push(expression.name);
+    }
   } else if (
     isOptionalMemberExpression(expression) ||
     isMemberExpression(expression)
@@ -210,14 +214,23 @@ const fillExpressionIdentifiers = (
   } else if (isLogicalExpression(expression)) {
     fillExpressionIdentifiers(expression.left, identifiers);
     fillExpressionIdentifiers(expression.right, identifiers);
+  } else if (isTemplateLiteral(expression)) {
+    expression.expressions
+      .filter(expr => isExpression(expr))
+      .forEach(expr =>
+        fillExpressionIdentifiers(expr as Expression, identifiers)
+      );
   } else if (!isStringLiteral(expression)) {
     console.log("Unknown expression:", expression);
   }
 };
 
-const buildExpressionText = (code: string, expression: Expression) => {
+const buildExpressionText = (
+  code: string,
+  expression: Expression,
+  identifiers: string[]
+) => {
   if (isDefined(expression.start) && isDefined(expression.end)) {
-    const identifiers: string[] = [];
     fillExpressionIdentifiers(expression, identifiers);
     return `\${({ ${identifiers.join(", ")} }) => ${code.slice(
       expression.start,
@@ -233,9 +246,24 @@ const extractClassNameAttribute = (jsxOpeningNode: JSXOpeningElement) =>
       isJSXAttribute(attribute) && attribute.name.name === "className"
   ) as JSXAttribute | undefined;
 
+const filterExistingAttributesFromClassNameIdentifiers = (
+  jsxOpeningNode: JSXOpeningElement,
+  classNameIdentifiers: string[]
+) => {
+  const attributeNames = jsxOpeningNode.attributes
+    .filter(
+      attribute => isJSXAttribute(attribute) && isJSXIdentifier(attribute.name)
+    )
+    .map(attribute => ((attribute as JSXAttribute).name as JSXIdentifier).name);
+  return classNameIdentifiers.filter(
+    classNameIdentifier => !attributeNames.includes(classNameIdentifier)
+  );
+};
+
 const extractClassName = (
   code: string,
-  classNameAttribute: JSXAttribute | null | undefined
+  classNameAttribute: JSXAttribute | null | undefined,
+  identifiers: string[]
 ) => {
   if (!classNameAttribute?.value) return "";
   if (classNameAttribute.value.type === "StringLiteral") {
@@ -250,7 +278,7 @@ const extractClassName = (
     if (isTemplateLiteral(expression)) {
       const expressionText = expression.expressions
         .filter(expr => isExpression(expr))
-        .map(expr => buildExpressionText(code, expr as Expression))
+        .map(expr => buildExpressionText(code, expr as Expression, identifiers))
         .join(" ");
       const quasisText = expression.quasis
         .map(quasi => quasi.value.raw?.trim() || "")
@@ -259,7 +287,7 @@ const extractClassName = (
       return `${expressionText} ${quasisText}`;
     }
 
-    return buildExpressionText(code, expression);
+    return buildExpressionText(code, expression, identifiers);
   }
   return "";
 };
@@ -274,9 +302,28 @@ const getNodeOffsets = (node: Node | null | undefined) => {
   return undefined;
 };
 
-const sortOffsets = (offsetsA: Offsets, offsetsB: Offsets) => {
-  if (offsetsA.start < offsetsB.start) return 1;
-  if (offsetsA.start > offsetsB.start) return -1;
+const sortComponentByOffsets = (
+  componentA: Component | UnboundComponent,
+  componentB: Component | UnboundComponent
+) => {
+  if (!componentA.classNameOffsets) {
+    if (componentB.classNameOffsets) {
+      return -1;
+    }
+    return 0;
+  }
+  if (!componentB.classNameOffsets) {
+    if (componentA.classNameOffsets) {
+      return 1;
+    }
+    return 0;
+  }
+  if (componentA.classNameOffsets.start < componentB.classNameOffsets.start) {
+    return 1;
+  }
+  if (componentA.classNameOffsets.start > componentB.classNameOffsets.start) {
+    return -1;
+  }
   return 0;
 };
 
@@ -351,10 +398,20 @@ export const collectUnboundComponents = (code: string) => {
         if (!path.scope.hasBinding(node.name)) {
           const jsxOpeningNode = path.parentPath.node;
           const classNameAttribute = extractClassNameAttribute(jsxOpeningNode);
-          const className = extractClassName(code, classNameAttribute);
+          const classNameIdentifiers: string[] = [];
+          const className = extractClassName(
+            code,
+            classNameAttribute,
+            classNameIdentifiers
+          );
+          const propNames = filterExistingAttributesFromClassNameIdentifiers(
+            jsxOpeningNode,
+            classNameIdentifiers
+          );
           const classNameOffsets = getNodeOffsets(classNameAttribute);
           unboundJSXIdentifiers.add({
             name: node.name,
+            propNames,
             className,
             classNameOffsets
           });
@@ -370,13 +427,9 @@ export const extractUnboundComponentNames = (
   unboundComponents: UnboundComponent[]
 ) => unboundComponents?.map(component => component.name);
 
-export const extractUnboundComponentClassNameOffsets = (
-  unboundComponents: Component[] | UnboundComponent[]
-) =>
-  unboundComponents
-    ?.filter(component => !!component.classNameOffsets)
-    .map(component => component.classNameOffsets as Offsets)
-    .sort(sortOffsets) || [];
+export const getComponentsSortedByClassNameOffsets = (
+  components: Component[] | UnboundComponent[]
+) => [...components].sort(sortComponentByOffsets);
 
 export const generateDeclarations = ({
   components,
@@ -412,12 +465,22 @@ export const getUnderlyingComponent = (
   }
 
   const classNameAttribute = extractClassNameAttribute(node.openingElement);
-  const className = extractClassName(code, classNameAttribute);
+  const classNameIdentifiers: string[] = [];
+  const className = extractClassName(
+    code,
+    classNameAttribute,
+    classNameIdentifiers
+  );
+  const propNames = filterExistingAttributesFromClassNameIdentifiers(
+    node.openingElement,
+    classNameIdentifiers
+  );
   const classNameOffsets = getNodeOffsets(classNameAttribute);
   const closingTagOffsets = getNodeOffsets(node.closingElement?.name);
 
   return {
     name: "",
+    propNames,
     type: node.openingElement.name.name,
     selfClosing: !!node.openingElement.selfClosing,
     openingTagOffsets,

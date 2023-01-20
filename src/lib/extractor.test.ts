@@ -1,7 +1,7 @@
 import {
   collectUnboundComponents,
   Component,
-  extractUnboundComponentClassNameOffsets,
+  getComponentsSortedByClassNameOffsets,
   extractUnboundComponentNames,
   generateDeclarations,
   getUnderlyingComponent,
@@ -70,7 +70,7 @@ describe("collectUnboundComponents", () => {
       <Abc className="flex flex-col">
         <Def>
           <Efg className={c ? "justify-center" : "justify-start"} />
-          <Ghi className={\`flex flex-col \${c(a?.e) && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} />
+          <Ghi className={\`flex flex-col \${c(a?.e) && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} b={b} />
           <Efg className="justify-center" />
           <Ghi />
           <section />
@@ -85,33 +85,40 @@ describe("collectUnboundComponents", () => {
   }
     `;
 
-    expect(collectUnboundComponents(code)).toEqual([
+    const expectedUnboundComponents: UnboundComponent[] = [
       {
         name: "Abc",
+        propNames: [],
         className: "flex flex-col",
         classNameOffsets: { start: 141, end: 166 }
       },
       {
         name: "Efg",
+        propNames: ["c"],
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
         classNameOffsets: { start: 197, end: 247 }
       },
       {
         name: "Ghi",
+        propNames: ["c", "a"],
         className:
-          '${({ c, a }) => c(a?.e) && "flex"} ${({ a, b, c }) => (a && b) || c ? "justify-center" : "justify-start"} flex flex-col',
+          '${({ c, a }) => c(a?.e) && "flex"} ${({ c, a, b }) => (a && b) || c ? "justify-center" : "justify-start"} flex flex-col',
         classNameOffsets: { start: 266, end: 368 }
       },
       {
         name: "Efg",
+        propNames: [],
         className: "justify-center",
-        classNameOffsets: { start: 387, end: 413 }
+        classNameOffsets: { start: 393, end: 419 }
       },
       {
         name: "Ghi",
+        propNames: [],
         className: ""
       }
-    ]);
+    ];
+
+    expect(collectUnboundComponents(code)).toEqual(expectedUnboundComponents);
   });
 
   it("should return collected unbound components in case of syntax error", async () => {
@@ -152,11 +159,13 @@ describe("generateDeclarations", () => {
     const unboundComponents: UnboundComponent[] = [
       {
         name: "Abc",
+        propNames: [],
         className: "flex flex-col",
         classNameOffsets: { start: 124, end: 149 }
       },
       {
         name: "Xyz",
+        propNames: ["c"],
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
         classNameOffsets: { start: 176, end: 226 }
       }
@@ -176,11 +185,13 @@ describe("generateDeclarations", () => {
     const unboundComponents: UnboundComponent[] = [
       {
         name: "Abc",
+        propNames: [],
         className: "flex flex-col",
         classNameOffsets: { start: 124, end: 149 }
       },
       {
         name: "Xyz",
+        propNames: ["c"],
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
         classNameOffsets: { start: 176, end: 226 }
       }
@@ -200,6 +211,7 @@ describe("generateDeclarations", () => {
     const components: Component[] = [
       {
         name: "Abc",
+        propNames: [],
         type: "span",
         className: "flex flex-col",
         classNameOffsets: {
@@ -218,6 +230,7 @@ describe("generateDeclarations", () => {
       },
       {
         name: "Xyz",
+        propNames: ["c"],
         type: "Efg",
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
         classNameOffsets: {
@@ -247,6 +260,7 @@ describe("generateDeclarations", () => {
     const components: Component[] = [
       {
         name: "Abc",
+        propNames: [],
         type: "span",
         className: "flex flex-col",
         classNameOffsets: {
@@ -265,6 +279,7 @@ describe("generateDeclarations", () => {
       },
       {
         name: "Xyz",
+        propNames: ["c"],
         type: "Efg",
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
         classNameOffsets: {
@@ -296,11 +311,13 @@ describe("extractUnboundComponentNames", () => {
     const unboundComponentNames = extractUnboundComponentNames([
       {
         name: "Abc",
+        propNames: [],
         className: "flex flex-col",
         classNameOffsets: { start: 124, end: 149 }
       },
       {
         name: "Xyz",
+        propNames: ["c"],
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
         classNameOffsets: { start: 176, end: 226 }
       }
@@ -309,24 +326,36 @@ describe("extractUnboundComponentNames", () => {
   });
 });
 
-describe("extractUnboundComponentClassNameOffsets", () => {
+describe("getComponentsSortedByClassNameOffsets", () => {
   it("should return class name offsets", async () => {
-    const unboundComponentClassNameOffsets =
-      extractUnboundComponentClassNameOffsets([
+    const componentsSortedByClassNameOffsets =
+      getComponentsSortedByClassNameOffsets([
         {
           name: "Abc",
+          propNames: [],
           className: "flex flex-col",
           classNameOffsets: { start: 124, end: 149 }
         },
         {
           name: "Xyz",
+          propNames: ["c"],
           className: '${({ c }) => c ? "justify-center" : "justify-start"}',
           classNameOffsets: { start: 176, end: 226 }
         }
       ]);
-    expect(unboundComponentClassNameOffsets).toEqual([
-      { start: 176, end: 226 },
-      { start: 124, end: 149 }
+    expect(componentsSortedByClassNameOffsets).toEqual([
+      {
+        name: "Xyz",
+        propNames: ["c"],
+        className: '${({ c }) => c ? "justify-center" : "justify-start"}',
+        classNameOffsets: { start: 176, end: 226 }
+      },
+      {
+        name: "Abc",
+        propNames: [],
+        className: "flex flex-col",
+        classNameOffsets: { start: 124, end: 149 }
+      }
     ]);
   });
 });
@@ -358,8 +387,9 @@ const TestComponent: React.FC = ({ a }) => {
   `;
 
   it("should return underlying component without self closing tag", () => {
-    expect(getUnderlyingComponent(code, 140)).toEqual({
+    const expectedComponent: Component = {
       name: "",
+      propNames: [],
       type: "Abc",
       className: "flex flex-col",
       classNameOffsets: {
@@ -375,12 +405,15 @@ const TestComponent: React.FC = ({ a }) => {
         start: 527,
         end: 530
       }
-    });
+    };
+
+    expect(getUnderlyingComponent(code, 140)).toEqual(expectedComponent);
   });
 
   it("should return underlying component with self closing tag", () => {
-    expect(getUnderlyingComponent(code, 380)).toEqual({
+    const expectedComponent: Component = {
       name: "",
+      propNames: [],
       type: "Efg",
       className: "justify-center",
       classNameOffsets: {
@@ -393,7 +426,9 @@ const TestComponent: React.FC = ({ a }) => {
       },
       selfClosing: true,
       closingTagOffsets: undefined
-    });
+    };
+
+    expect(getUnderlyingComponent(code, 380)).toEqual(expectedComponent);
   });
 });
 

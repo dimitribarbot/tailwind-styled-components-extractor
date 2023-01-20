@@ -4,7 +4,7 @@ import { getCorrespondingStyleFile } from "./lib/corresponding-file";
 import {
   collectUnboundComponents,
   Component,
-  extractUnboundComponentClassNameOffsets,
+  getComponentsSortedByClassNameOffsets,
   extractUnboundComponentNames,
   generateDeclarations,
   getUnderlyingComponent,
@@ -17,7 +17,7 @@ import {
   insertTailwindStyledImport,
   insertStyles,
   modifyImports,
-  removeClassNames,
+  replaceComponentClassNamesWithPropAttributes,
   executeFormatCommand,
   renameTag
 } from "./lib/modify-vscode-editor";
@@ -85,10 +85,7 @@ const extractCurrentToSeparateFile = async (
     component.name,
     component.closingTagOffsets ? [component.closingTagOffsets] : []
   );
-  await removeClassNames(
-    editor,
-    component.classNameOffsets ? [component.classNameOffsets] : []
-  );
+  await replaceComponentClassNamesWithPropAttributes(editor, [component]);
   await renameTag(editor, component.name, [component.openingTagOffsets]);
   await modifyImports(editor, styleFile, [component.name]);
   await executeFormatCommand();
@@ -112,10 +109,7 @@ const extractCurrentToSameFile = async (
     component.name,
     component.closingTagOffsets ? [component.closingTagOffsets] : []
   );
-  await removeClassNames(
-    editor,
-    component.classNameOffsets ? [component.classNameOffsets] : []
-  );
+  await replaceComponentClassNamesWithPropAttributes(editor, [component]);
   await renameTag(editor, component.name, [component.openingTagOffsets]);
 
   await insertStyles(editor, declarations);
@@ -171,9 +165,12 @@ const extractUnboundToSeparateFile = async (
   }
 
   const unboundComponentNames = extractUnboundComponentNames(components);
-  const unboundComponentClassNameOffsets =
-    extractUnboundComponentClassNameOffsets(components);
-  await removeClassNames(editor, unboundComponentClassNameOffsets);
+  const componentsSortedByClassNameOffsets =
+    getComponentsSortedByClassNameOffsets(components);
+  await replaceComponentClassNamesWithPropAttributes(
+    editor,
+    componentsSortedByClassNameOffsets
+  );
   await modifyImports(editor, styleFile, unboundComponentNames);
   await executeFormatCommand();
 
@@ -191,9 +188,12 @@ const extractUnboundToSameFile = async (
   components: UnboundComponent[],
   declarations: string
 ) => {
-  const unboundComponentClassNameOffsets =
-    extractUnboundComponentClassNameOffsets(components);
-  await removeClassNames(editor, unboundComponentClassNameOffsets);
+  const componentsSortedByClassNameOffsets =
+    getComponentsSortedByClassNameOffsets(components);
+  await replaceComponentClassNamesWithPropAttributes(
+    editor,
+    componentsSortedByClassNameOffsets
+  );
 
   await insertStyles(editor, declarations);
   await insertTailwindStyledImport(editor);

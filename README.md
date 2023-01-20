@@ -1,4 +1,4 @@
-# Styled-Components Extractor
+# Tailwind Styled-Components Extractor
 
 Generate [tailwind-styled-components](https://www.npmjs.com/package/tailwind-styled-components) definitions from JSX tags.
 This extension is based on the [existing one for styled-components](https://marketplace.visualstudio.com/items?itemName=FallenMax.styled-components-extractor).
