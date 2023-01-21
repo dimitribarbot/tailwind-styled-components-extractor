@@ -1,7 +1,7 @@
 {
   "name": "tailwind-styled-components-extractor",
   "displayName": "Tailwind Styled-Components Extractor",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Generate tailwind styled-components from JSX tags. A faster tailwind styled-component workflow.",
   "license": "MIT",
   "publisher": "dimitribarbot",
@@ -21,6 +21,7 @@
     "extractor",
     "snippet"
   ],
+  "icon": "images/logo.png",
   "scripts": {
     "vscode:prepublish": "yarn build && yarn test",
     "prebuild": "rimraf dist",

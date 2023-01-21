@@ -14,9 +14,11 @@ For maximum productivity, you can combine this extension with [Emmet](https://em
 1. Use Emmet to create JSX element tree
 2. Use this extension to extract tailwind-styled-components from the JSX
 
+![screenshot](images/screenshot.gif)
+
 ## Usage
 
-Use one of the four VS Code commands provided by this extension:
+Use one of the six VS Code commands provided by this extension:
 
 - `Extract current JSX to tailwind-styled-components to the same file` - Generates tailwind styled component definition for the underlying selected JSX element and appends it to end of the current JSX file.
 - `Extract current JSX to tailwind-styled-components to a separate file` - Generates tailwind styled component definition for the underlying selected JSX element and appends it to end of another file. Automatically imports the new component in the JSX file. The file the component is appended to is controlled by the `separateFile.outputFile` setting.
