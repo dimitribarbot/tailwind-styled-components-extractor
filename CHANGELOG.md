@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet!
 
+## [0.4.2] - 2023-01-22
+
+### Changed
+
+- Improve performance by removing checks of code when user is moving cursor in the text editor
+
 ## [0.4.1] - 2023-01-21
 
 ### Changed
@@ -28,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add missing props to extracted components when expressions are used
 
-[unreleased]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.1...HEAD
+[unreleased]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/b72f621adfcd460d7f15241dea247ebaa074dbea...v0.3.2

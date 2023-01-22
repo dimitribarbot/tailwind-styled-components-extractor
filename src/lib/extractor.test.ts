@@ -5,58 +5,8 @@ import {
   extractUnboundComponentNames,
   generateDeclarations,
   getUnderlyingComponent,
-  hasUnboundComponents,
-  isInJSX,
   UnboundComponent
 } from "./extractor";
-
-describe("hasUnboundComponents", () => {
-  it("should return true if unbound components are found", async () => {
-    const code = `
-  const Def = 1 as any
-  
-  const TestComponent: React.FC = ({ a }) => {
-    const b = a?.b
-    const c = b ?? c
-    return (
-      <Abc className="flex flex-col">
-        <Def>
-          <Efg className={c ? "justify-center" : "justify-start"} />
-          <Ghi className={\`flex flex-col \${c && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} />
-          <Efg className="justify-center" />
-          <Ghi />
-          <section />
-        </Def>
-        <ul>
-          <li>123</li>
-          <li>456</li>
-          <li>789</li>
-        </ul>
-      </Abc>
-    )
-  }
-    `;
-
-    expect(hasUnboundComponents(code)).toBe(true);
-  });
-
-  it("should return false if no collected unbound components are found", async () => {
-    const code = `
-  const Def = 1 as any
-  
-  const TestComponent: React.SFC = () => {
-    const c = a?.b ?? c
-    return (
-      <Def>
-        <section />
-      </Def>
-    )
-  }
-    `;
-
-    expect(hasUnboundComponents(code)).toBe(false);
-  });
-});
 
 describe("collectUnboundComponents", () => {
   it("should return collected unbound components", async () => {
@@ -386,6 +336,10 @@ const TestComponent: React.FC = ({ a }) => {
 }
   `;
 
+  it("should return no underlying component if not in JSX", () => {
+    expect(getUnderlyingComponent(code, 13)).toEqual(undefined);
+  });
+
   it("should return underlying component without self closing tag", () => {
     const expectedComponent: Component = {
       name: "",
@@ -429,52 +383,5 @@ const TestComponent: React.FC = ({ a }) => {
     };
 
     expect(getUnderlyingComponent(code, 380)).toEqual(expectedComponent);
-  });
-});
-
-describe("isInJSX", () => {
-  const code = `
-const Def = 1 as any
-
-const TestComponent: React.FC = ({ a }) => {
-  const b = a?.b
-  const c = b ?? c
-  return (
-    <Abc className="flex flex-col">
-      <Def>
-        <Efg className={c ? "justify-center" : "justify-start"} />
-        <Ghi className={\`flex flex-col \${c && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} />
-        <Efg className="justify-center" />
-        <Ghi />
-        <section />
-      </Def>
-      <ul>
-        <li>123</li>
-        <li>456</li>
-        <li>789</li>
-      </ul>
-    </Abc>
-  )
-}
-  `;
-
-  it("should return true", () => {
-    expect(isInJSX(code, 119)).toBe(true);
-    expect(isInJSX(code, 120)).toBe(true);
-    expect(isInJSX(code, 129)).toBe(true);
-    expect(isInJSX(code, 140)).toBe(true);
-    expect(isInJSX(code, 149)).toBe(true);
-    expect(isInJSX(code, 150)).toBe(true);
-    expect(isInJSX(code, 190)).toBe(true);
-    expect(isInJSX(code, 400)).toBe(true);
-    expect(isInJSX(code, 420)).toBe(true);
-    expect(isInJSX(code, 421)).toBe(true);
-    expect(isInJSX(code, 430)).toBe(true);
-  });
-
-  it("should return false", () => {
-    expect(isInJSX(code, 13)).toBe(false);
-    expect(isInJSX(code, 100)).toBe(false);
-    expect(isInJSX(code, 151)).toBe(false);
   });
 });

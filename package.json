@@ -1,7 +1,7 @@
 {
   "name": "tailwind-styled-components-extractor",
   "displayName": "Tailwind Styled-Components Extractor",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Generate tailwind styled-components from JSX tags. A faster tailwind styled-component workflow.",
   "license": "MIT",
   "publisher": "dimitribarbot",
@@ -46,11 +46,11 @@
       },
       {
         "command": "tailwindStyledComponentsExtractor.extractUnboundToClipboard",
-        "title": "Tailwind Styled: Extract Unbound Components to Clipboard"
+        "title": "Tailwind Styled: Extract Unbounds to Clipboard"
       },
       {
         "command": "tailwindStyledComponentsExtractor.extractExportedUnboundToClipboard",
-        "title": "Tailwind Styled: Extract Exported Unbound Components to Clipboard"
+        "title": "Tailwind Styled: Extract Exported Unbounds to Clipboard"
       },
       {
         "command": "tailwindStyledComponentsExtractor.extractUnboundToSameFile",
@@ -64,22 +64,22 @@
     "menus": {
       "editor/context": [
         {
-          "when": "isInJSX",
+          "when": "!editorReadonly && editorLangId == javascriptreact || editorLangId == typescriptreact",
           "command": "tailwindStyledComponentsExtractor.extractCurrentToSameFile",
           "group": "2_extract@1"
         },
         {
-          "when": "isInJSX",
+          "when": "!editorReadonly && editorLangId == javascriptreact || editorLangId == typescriptreact",
           "command": "tailwindStyledComponentsExtractor.extractCurrentToSeparateFile",
           "group": "2_extract@2"
         },
         {
-          "when": "hasUnboundComponents",
+          "when": "!editorReadonly && editorLangId == javascriptreact || editorLangId == typescriptreact",
           "command": "tailwindStyledComponentsExtractor.extractUnboundToSameFile",
           "group": "2_extract@3"
         },
         {
-          "when": "hasUnboundComponents",
+          "when": "!editorReadonly && editorLangId == javascriptreact || editorLangId == typescriptreact",
           "command": "tailwindStyledComponentsExtractor.extractUnboundToSeparateFile",
           "group": "2_extract@4"
         }

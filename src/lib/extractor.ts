@@ -357,30 +357,6 @@ const getUnderlyingJSXNode = (
   return deepestNode;
 };
 
-export const hasUnboundComponents = (code: string) => {
-  const ast = parser.parse(code, parseOptions);
-
-  let hasUnboundComponents = false;
-
-  traverse(ast, {
-    enter(path) {
-      const node = path.node;
-
-      if (isJSXIdentifier(node) && isJSXOpeningElement(path.parentPath?.node)) {
-        if (isKnownJSXTag(node.name)) {
-          return;
-        }
-        if (!path.scope.hasBinding(node.name)) {
-          hasUnboundComponents = true;
-          path.stop();
-        }
-      }
-    }
-  });
-
-  return hasUnboundComponents;
-};
-
 export const collectUnboundComponents = (code: string) => {
   const ast = parser.parse(code, parseOptions);
 
@@ -489,6 +465,3 @@ export const getUnderlyingComponent = (
     classNameOffsets
   };
 };
-
-export const isInJSX = (code: string, index: number): boolean =>
-  !!getUnderlyingJSXNode(code, index);

@@ -8,8 +8,6 @@ import {
   extractUnboundComponentNames,
   generateDeclarations,
   getUnderlyingComponent,
-  hasUnboundComponents,
-  isInJSX,
   UnboundComponent
 } from "./lib/extractor";
 import { getTailwindStyledImportInsertion } from "./lib/imports";
@@ -32,32 +30,6 @@ type ExtractType =
   | "extractExportedUnboundToClipboard"
   | "extractUnboundToSameFile"
   | "extractUnboundToSeparateFile";
-
-const setContextForMenus = () => {
-  const editor = vscode.window.activeTextEditor;
-  if (
-    !editor ||
-    (editor.document.languageId !== "javascriptreact" &&
-      editor.document.languageId !== "typescriptreact")
-  ) {
-    vscode.commands.executeCommand("setContext", "isJSX", false);
-    vscode.commands.executeCommand("setContext", "hasUnboundComponents", false);
-  } else {
-    const text = editor.document.getText();
-    const offset = editor.document.offsetAt(editor.selection.active);
-
-    const unboundComponentAreDefined = hasUnboundComponents(text);
-    const isOffsetInJSX = isInJSX(text, offset);
-
-    vscode.commands.executeCommand(
-      "setContext",
-      "hasUnboundComponents",
-      unboundComponentAreDefined
-    );
-
-    vscode.commands.executeCommand("setContext", "isInJSX", isOffsetInJSX);
-  }
-};
 
 const extractCurrentToSeparateFile = async (
   editor: vscode.TextEditor,
@@ -316,8 +288,6 @@ const extract = async (type: ExtractType): Promise<void> => {
 
 export const activate = (context: vscode.ExtensionContext) => {
   context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor(setContextForMenus),
-    vscode.window.onDidChangeTextEditorSelection(setContextForMenus),
     vscode.commands.registerCommand(
       "tailwindStyledComponentsExtractor.extractCurrentToSameFile",
       () => extract("extractCurrentToSameFile")
