@@ -13,7 +13,9 @@ import {
   isJSXOpeningElement,
   isLogicalExpression,
   isMemberExpression,
+  isObjectExpression,
   isOptionalMemberExpression,
+  isSpreadElement,
   isStringLiteral,
   isTemplateLiteral,
   JSXAttribute,
@@ -207,6 +209,14 @@ const fillExpressionIdentifiers = (
     for (const argument of expression.arguments) {
       if (isExpression(argument)) {
         fillExpressionIdentifiers(argument, identifiers);
+      } else if (isSpreadElement(argument)) {
+        fillExpressionIdentifiers(argument.argument, identifiers);
+      }
+    }
+  } else if (isObjectExpression(expression)) {
+    for (const property of expression.properties) {
+      if (isSpreadElement(property)) {
+        fillExpressionIdentifiers(property.argument, identifiers);
       }
     }
   } else if (isConditionalExpression(expression)) {

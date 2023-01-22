@@ -22,6 +22,7 @@ describe("collectUnboundComponents", () => {
           <Efg className={c ? "justify-center" : "justify-start"} />
           <Ghi className={\`flex flex-col \${c(a?.e) && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} b={b} />
           <Efg className="justify-center" />
+          <Efg className={{ ...(a || {}) }.b ?? ""} />
           <Ghi />
           <section />
         </Def>
@@ -60,6 +61,12 @@ describe("collectUnboundComponents", () => {
         propNames: [],
         className: "justify-center",
         classNameOffsets: { start: 393, end: 419 }
+      },
+      {
+        name: "Efg",
+        propNames: ["a"],
+        className: '${({ a }) => { ...(a || {}) }.b ?? ""}',
+        classNameOffsets: { start: 438, end: 474 }
       },
       {
         name: "Ghi",

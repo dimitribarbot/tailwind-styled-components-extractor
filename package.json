@@ -1,7 +1,7 @@
 {
   "name": "tailwind-styled-components-extractor",
   "displayName": "Tailwind Styled-Components Extractor",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Generate tailwind styled-components from JSX tags. A faster tailwind styled-component workflow.",
   "license": "MIT",
   "publisher": "dimitribarbot",
