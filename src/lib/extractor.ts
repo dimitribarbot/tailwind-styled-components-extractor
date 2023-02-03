@@ -45,6 +45,7 @@ const knownJSXTags = [
   "a",
   "abbr",
   "address",
+  "animate",
   "area",
   "article",
   "aside",
@@ -61,27 +62,60 @@ const knownJSXTags = [
   "canvas",
   "caption",
   "center",
+  "circle",
   "cite",
+  "clipPath",
   "code",
   "col",
   "colgroup",
   "data",
   "datalist",
   "dd",
+  "defs",
   "del",
+  "desc",
   "details",
   "dfn",
   "dialog",
   "div",
   "dl",
   "dt",
+  "ellipse",
   "em",
   "embed",
+  "feBlend",
+  "feColorMatrix",
+  "feComponentTransfer",
+  "feComposite",
+  "feConvolveMatrix",
+  "feDiffuseLighting",
+  "feDisplacementMap",
+  "feDistantLight",
+  "feDropShadow",
+  "feFlood",
+  "feFuncA",
+  "feFuncB",
+  "feFuncG",
+  "feFuncR",
+  "feGaussianBlur",
+  "feImage",
+  "feMerge",
+  "feMergeNode",
+  "feMorphology",
+  "feOffset",
+  "fePointLight",
+  "feSpecularLighting",
+  "feSpotLight",
+  "feTile",
+  "feTurbulence",
   "fieldset",
   "figcaption",
   "figure",
+  "filter",
   "footer",
+  "foreignObject",
   "form",
+  "g",
   "h1",
   "h2",
   "h3",
@@ -95,6 +129,7 @@ const knownJSXTags = [
   "html",
   "i",
   "iframe",
+  "image",
   "img",
   "input",
   "ins",
@@ -103,13 +138,18 @@ const knownJSXTags = [
   "label",
   "legend",
   "li",
+  "line",
+  "linearGradient",
   "link",
   "main",
   "map",
   "mark",
+  "marker",
+  "mask",
   "menu",
   "menuitem",
   "meta",
+  "metadata",
   "meter",
   "nav",
   "noscript",
@@ -120,10 +160,16 @@ const knownJSXTags = [
   "output",
   "p",
   "param",
+  "path",
+  "pattern",
   "picture",
+  "polygon",
+  "polyline",
   "pre",
   "progress",
   "q",
+  "radialGradient",
+  "rect",
   "rp",
   "rt",
   "ruby",
@@ -136,16 +182,22 @@ const knownJSXTags = [
   "small",
   "source",
   "span",
+  "stop",
   "strong",
   "style",
   "sub",
   "summary",
   "sup",
+  "svg",
+  "switch",
+  "symbol",
   "table",
   "template",
   "tbody",
   "td",
+  "text",
   "textarea",
+  "textPath",
   "tfoot",
   "th",
   "thead",
@@ -153,10 +205,13 @@ const knownJSXTags = [
   "title",
   "tr",
   "track",
+  "tspan",
   "u",
   "ul",
+  "use",
   "var",
   "video",
+  "view",
   "wbr",
   "webview"
 ];
@@ -190,12 +245,10 @@ const isDefined = (number: number | null | undefined): number is number =>
 
 const fillExpressionIdentifiers = (
   expression: Expression,
-  identifiers: string[]
+  identifiers: Set<string>
 ) => {
   if (isIdentifier(expression)) {
-    if (!identifiers.includes(expression.name)) {
-      identifiers.push(expression.name);
-    }
+    identifiers.add(expression.name);
   } else if (
     isOptionalMemberExpression(expression) ||
     isMemberExpression(expression)
@@ -238,11 +291,11 @@ const fillExpressionIdentifiers = (
 const buildExpressionText = (
   code: string,
   expression: Expression,
-  identifiers: string[]
+  identifiers: Set<string>
 ) => {
   if (isDefined(expression.start) && isDefined(expression.end)) {
     fillExpressionIdentifiers(expression, identifiers);
-    return `\${({ ${identifiers.join(", ")} }) => ${code.slice(
+    return `\${({ ${Array.from(identifiers).join(", ")} }) => ${code.slice(
       expression.start,
       expression.end
     )}}`;
@@ -258,14 +311,14 @@ const extractClassNameAttribute = (jsxOpeningNode: JSXOpeningElement) =>
 
 const filterExistingAttributesFromClassNameIdentifiers = (
   jsxOpeningNode: JSXOpeningElement,
-  classNameIdentifiers: string[]
+  classNameIdentifiers: Set<string>
 ) => {
   const attributeNames = jsxOpeningNode.attributes
     .filter(
       attribute => isJSXAttribute(attribute) && isJSXIdentifier(attribute.name)
     )
     .map(attribute => ((attribute as JSXAttribute).name as JSXIdentifier).name);
-  return classNameIdentifiers.filter(
+  return Array.from(classNameIdentifiers).filter(
     classNameIdentifier => !attributeNames.includes(classNameIdentifier)
   );
 };
@@ -273,7 +326,7 @@ const filterExistingAttributesFromClassNameIdentifiers = (
 const extractClassName = (
   code: string,
   classNameAttribute: JSXAttribute | null | undefined,
-  identifiers: string[]
+  identifiers: Set<string>
 ) => {
   if (!classNameAttribute?.value) return "";
   if (classNameAttribute.value.type === "StringLiteral") {
@@ -384,7 +437,7 @@ export const collectUnboundComponents = (code: string) => {
         if (!path.scope.hasBinding(node.name)) {
           const jsxOpeningNode = path.parentPath.node;
           const classNameAttribute = extractClassNameAttribute(jsxOpeningNode);
-          const classNameIdentifiers: string[] = [];
+          const classNameIdentifiers = new Set<string>();
           const className = extractClassName(
             code,
             classNameAttribute,
@@ -451,7 +504,7 @@ export const getUnderlyingComponent = (
   }
 
   const classNameAttribute = extractClassNameAttribute(node.openingElement);
-  const classNameIdentifiers: string[] = [];
+  const classNameIdentifiers = new Set<string>();
   const className = extractClassName(
     code,
     classNameAttribute,
