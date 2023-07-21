@@ -13,60 +13,68 @@ describe("collectUnboundComponents", () => {
     const code = `
   const Def = 1 as any
   
-  const TestComponent: React.FC = ({ a }) => {
+  const TestComponent: React.FC = ({ a, className }) => {
     const b = a?.b
     const c = b ?? a?.d
     return (
-      <Abc className="flex flex-col">
-        <Def>
-          <Efg className={c ? "justify-center" : "justify-start"} />
-          <Ghi className={\`flex flex-col \${c(a?.e) && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} b={b} />
-          <Efg className="justify-center" />
-          <Efg className={{ ...(a || {}) }.b ?? ""} />
-          <Ghi />
-          <section />
-        </Def>
-        <ul>
-          <li>123</li>
-          <li>456</li>
-          <li>789</li>
-        </ul>
-      </Abc>
+      <Fih className={className}>
+        <Abc className="flex flex-col">
+          <Def>
+            <Efg className={c ? "justify-center" : "justify-start"} />
+            <Ghi className={\`flex flex-col \${c(a?.e) && "flex"} \${(a && b) || c ? "justify-center" : "justify-start"}\`} b={b} />
+            <Efg className="justify-center" />
+            <Efg className={{ ...(a || {}) }.b ?? ""} />
+            <Ghi />
+            <section />
+          </Def>
+          <ul>
+            <li>123</li>
+            <li>456</li>
+            <li>789</li>
+          </ul>
+        </Abc>
+      </Fih>
     )
   }
     `;
 
     const expectedUnboundComponents: UnboundComponent[] = [
       {
+        name: "Fih",
+        propNames: ["className"],
+        className: "",
+        classNameOffsets: { start: 152, end: 173 }
+      },
+      {
         name: "Abc",
         propNames: [],
         className: "flex flex-col",
-        classNameOffsets: { start: 141, end: 166 }
+        classNameOffsets: { start: 188, end: 213 }
       },
       {
         name: "Efg",
         propNames: ["c"],
         className: '${({ c }) => c ? "justify-center" : "justify-start"}',
-        classNameOffsets: { start: 197, end: 247 }
+        classNameOffsets: { start: 248, end: 298 }
       },
       {
         name: "Ghi",
         propNames: ["c", "a"],
         className:
           '${({ c, a }) => c(a?.e) && "flex"} ${({ c, a, b }) => (a && b) || c ? "justify-center" : "justify-start"} flex flex-col',
-        classNameOffsets: { start: 266, end: 368 }
+        classNameOffsets: { start: 319, end: 421 }
       },
       {
         name: "Efg",
         propNames: [],
         className: "justify-center",
-        classNameOffsets: { start: 393, end: 419 }
+        classNameOffsets: { start: 448, end: 474 }
       },
       {
         name: "Efg",
         propNames: ["a"],
         className: '${({ a }) => { ...(a || {}) }.b ?? ""}',
-        classNameOffsets: { start: 438, end: 474 }
+        classNameOffsets: { start: 495, end: 531 }
       },
       {
         name: "Ghi",
@@ -81,7 +89,7 @@ describe("collectUnboundComponents", () => {
   it("should return collected unbound components in case of syntax error", async () => {
     const code = `
   const Def = 1 as any
-  
+
   const TestComponent: React.SFC = () => {
     const c = a?.b ?? c
     return (

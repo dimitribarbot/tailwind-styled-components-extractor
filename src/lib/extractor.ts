@@ -317,7 +317,8 @@ const filterExistingAttributesFromClassNameIdentifiers = (
     .filter(
       attribute => isJSXAttribute(attribute) && isJSXIdentifier(attribute.name)
     )
-    .map(attribute => ((attribute as JSXAttribute).name as JSXIdentifier).name);
+    .map(attribute => ((attribute as JSXAttribute).name as JSXIdentifier).name)
+    .filter(name => name !== "className");
   return Array.from(classNameIdentifiers).filter(
     classNameIdentifier => !attributeNames.includes(classNameIdentifier)
   );
@@ -335,6 +336,11 @@ const extractClassName = (
   if (classNameAttribute.value.type === "JSXExpressionContainer") {
     const expression = classNameAttribute.value.expression;
     if (isJSXEmptyExpression(expression)) {
+      return "";
+    }
+
+    if (isIdentifier(expression)) {
+      identifiers.add(expression.name);
       return "";
     }
 

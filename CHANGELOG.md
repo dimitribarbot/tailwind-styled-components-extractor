@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet!
 
+## [0.4.5] - 2023-07-21
+
+### Fixed
+
+- Do not replace className if there is only a simple identifier mapping such as `className={className}`
+
 ## [0.4.4] - 2023-02-03
 
 ### Fixed
@@ -46,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add missing props to extracted components when expressions are used
 
-[unreleased]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.4...HEAD
+[unreleased]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.3...v0.4.4
 [0.4.4]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.1...v0.4.2
