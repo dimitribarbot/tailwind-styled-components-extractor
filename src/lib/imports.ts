@@ -19,7 +19,7 @@ export const getImportInsertion = (
     };
   }
 
-  const importRegex = new RegExp(`(import {[^}]*?)[\\s\\n]+} from ".+"[;]?`);
+  const importRegex = new RegExp(`import .+ from ".+"[;]?`);
   const importAlreadyPresent = importRegex.exec(existingText);
   const insertionOffset = importAlreadyPresent?.index ?? 0;
 

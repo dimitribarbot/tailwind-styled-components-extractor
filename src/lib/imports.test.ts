@@ -19,8 +19,7 @@ test("getImportInsertion no existing import with using directive", async () => {
   const code = `
 "using client"
 
-import { foo } from "./bar"
-import { baz } from "./qux"`;
+import * as React from "react"`;
 
   const insertion = getImportInsertion(code, "./styles", ["Abc", "Xyz"]);
   expect(insertion).toEqual({
