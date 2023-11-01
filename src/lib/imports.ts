@@ -3,15 +3,15 @@ export const getImportInsertion = (
   importPath: string,
   modulesToImport: string[]
 ) => {
-  const importRegex = new RegExp(
+  const importToInsertRegex = new RegExp(
     `(import {[^}]*?)[\\s\\n]+} from "${importPath}"[;]?`,
     "gm"
   );
-  const importAlreadyPresent = importRegex.exec(existingText);
-  if (importAlreadyPresent) {
-    const matchIndex = importAlreadyPresent.index;
-    const upToImportList = importAlreadyPresent[1];
-    const insertionOffset = matchIndex + upToImportList.length;
+  const importToInsertAlreadyPresent = importToInsertRegex.exec(existingText);
+  if (importToInsertAlreadyPresent) {
+    const matchIndex = importToInsertAlreadyPresent.index;
+    const upToImportToInsertList = importToInsertAlreadyPresent[1];
+    const insertionOffset = matchIndex + upToImportToInsertList.length;
 
     return {
       insertionText: `, ${modulesToImport.join(", ")}`,
@@ -19,11 +19,15 @@ export const getImportInsertion = (
     };
   }
 
+  const importRegex = new RegExp(`(import {[^}]*?)[\\s\\n]+} from ".+"[;]?`);
+  const importAlreadyPresent = importRegex.exec(existingText);
+  const insertionOffset = importAlreadyPresent?.index ?? 0;
+
   return {
     insertionText: `import { ${modulesToImport.join(
       ", "
     )} } from "${importPath}"\n`,
-    insertionOffset: 0
+    insertionOffset
   };
 };
 

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet!
 
+## [0.4.6] - 2023-11-01
+
+### Fixed
+
+- Take `using` directive into account when adding import statement in file
+
 ## [0.4.5] - 2023-07-21
 
 ### Fixed
@@ -52,8 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add missing props to extracted components when expressions are used
 
-[unreleased]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.5...HEAD
-[0.4.5]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.3...v0.4.4
+[unreleased]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.6...HEAD
+[0.4.6]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.5...v0.4.6
+[0.4.5]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/dimitribarbot/tailwind-styled-components-extractor/compare/v0.4.1...v0.4.2

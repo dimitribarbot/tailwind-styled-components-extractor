@@ -6,13 +6,26 @@ import {
 test("getImportInsertion no existing import", async () => {
   const code = `
 import { foo } from "./bar"
-import { baz } from "./qux"
-  `;
+import { baz } from "./qux"`;
 
   const insertion = getImportInsertion(code, "./styles", ["Abc", "Xyz"]);
   expect(insertion).toEqual({
     insertionText: 'import { Abc, Xyz } from "./styles"\n',
-    insertionOffset: 0
+    insertionOffset: 1
+  });
+});
+
+test("getImportInsertion no existing import with using directive", async () => {
+  const code = `
+"using client"
+
+import { foo } from "./bar"
+import { baz } from "./qux"`;
+
+  const insertion = getImportInsertion(code, "./styles", ["Abc", "Xyz"]);
+  expect(insertion).toEqual({
+    insertionText: 'import { Abc, Xyz } from "./styles"\n',
+    insertionOffset: 17
   });
 });
 
@@ -40,7 +53,10 @@ import {
 import { baz } from "./qux"
   `;
 
-  const insertion = getImportInsertion(code, "./Component.styles", ["Abc", "Xyz"]);
+  const insertion = getImportInsertion(code, "./Component.styles", [
+    "Abc",
+    "Xyz"
+  ]);
   expect(insertion).toEqual({
     insertionText: ", Abc, Xyz",
     insertionOffset: 50
@@ -55,7 +71,7 @@ import { baz } from "./qux"
 
   const insertion = getTailwindStyledImportInsertion(code);
   expect(insertion).toEqual({
-    insertionText: "import tw from \"tailwind-styled-components\"\n",
+    insertionText: 'import tw from "tailwind-styled-components"\n',
     insertionOffset: 0
   });
 });
@@ -69,7 +85,7 @@ import { baz } from "./qux"
 
   const insertion = getTailwindStyledImportInsertion(code);
   expect(insertion).toEqual({
-    insertionText: "import tw from \"tailwind-styled-components\"\n",
+    insertionText: 'import tw from "tailwind-styled-components"\n',
     insertionOffset: 0
   });
 });
