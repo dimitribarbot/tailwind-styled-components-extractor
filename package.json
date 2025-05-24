@@ -23,8 +23,10 @@
   ],
   "icon": "images/logo.png",
   "scripts": {
-    "build": "tsc -p ./ && mkdir -p ./dist/test/suite && cp -r ./src/test/suite/component ./dist/test/suite",
+    "build": "tsc -p ./",
+    "copy-files": "copyfiles -u 1 src/test/suite/component/*.* dist/",
     "prebuild": "rimraf dist",
+    "postbuild": "yarn copy-files",
     "test": "jest",
     "test:watch": "jest --watch",
     "vscode:prepublish": "yarn build && yarn test",
@@ -127,6 +129,7 @@
     "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
+    "copyfiles": "^2.4.1",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "jest": "^29.7.0",
@@ -161,7 +164,6 @@
   "engines": {
     "vscode": "^1.100.0"
   },
-  "packageManager": "yarn@4.9.1",
   "resolutions": {
     "@types/react": "19.1.5",
     "@types/react-dom": "19.1.5"
