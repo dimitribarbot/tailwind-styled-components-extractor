@@ -16,7 +16,12 @@ const config = [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier"
-  )
+  ),
+  [
+    {
+      ignores: ["dist/**/*", "esbuild.js"]
+    }
+  ]
 ];
 
 export default config;

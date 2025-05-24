@@ -23,14 +23,18 @@
   ],
   "icon": "images/logo.png",
   "scripts": {
-    "build": "tsc -p ./",
-    "copy-files": "copyfiles -u 1 src/test/suite/component/*.* dist/",
     "prebuild": "rimraf dist",
+    "build": "yarn check-types && node esbuild.js",
     "postbuild": "yarn copy-files",
+    "copy-files": "copyfiles -u 1 src/test/suite/component/*.* dist/",
+    "check-types": "tsc --noEmit",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "test": "jest",
     "test:watch": "jest --watch",
-    "vscode:prepublish": "yarn build && yarn test",
-    "watch": "tsc -watch -p ./"
+    "vscode:prepublish": "yarn package",
+    "package": "yarn check-types && node esbuild.js --production && yarn test"
   },
   "activationEvents": [
     "workspaceContains:package.json"
@@ -130,9 +134,11 @@
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
     "copyfiles": "^2.4.1",
+    "esbuild": "^0.25.4",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "jest": "^29.7.0",
+    "npm-run-all": "^4.1.5",
     "prettier": "^3.5.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
