@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nothing yet!
 
+## [0.5.0] - 2025-05-24
+
+### Added
+
+- Add possibility to define `tailwind-styled-components` module name so that import statements can be in the form `import tw from "my-custom-tailwind-styled-components"`.
+
 ## [0.4.7] - 2023-11-01
 
 ### Fixed

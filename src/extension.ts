@@ -64,7 +64,7 @@ const extractCurrentToSeparateFile = async (
 
   const styleFileEditor = await openFileInEditor(styleFile);
   await insertStyles(styleFileEditor, declarations);
-  await insertTailwindStyledImport(styleFileEditor);
+  await insertTailwindStyledImport(styleFileEditor, config);
   await executeFormatCommand();
 
   await editor.document.save();
@@ -73,6 +73,7 @@ const extractCurrentToSeparateFile = async (
 
 const extractCurrentToSameFile = async (
   editor: vscode.TextEditor,
+  config: vscode.WorkspaceConfiguration,
   component: Component,
   declarations: string
 ) => {
@@ -85,7 +86,7 @@ const extractCurrentToSameFile = async (
   await renameTag(editor, component.name, [component.openingTagOffsets]);
 
   await insertStyles(editor, declarations);
-  await insertTailwindStyledImport(editor);
+  await insertTailwindStyledImport(editor, config);
   await executeFormatCommand();
 
   await editor.document.save();
@@ -99,8 +100,13 @@ const extractUnboundToClipboard = async (
 ) => {
   let clipboardText = declarations;
   if (config.get("addImportStatement", true)) {
+    const tailwindStyledComponentModule = config.get(
+      "tailwindStyledComponentModule",
+      "tailwind-styled-components"
+    );
     const tailwindStyledImportInsertion = getTailwindStyledImportInsertion(
-      editor.document.getText()
+      editor.document.getText(),
+      tailwindStyledComponentModule
     );
     if (tailwindStyledImportInsertion) {
       clipboardText =
@@ -124,10 +130,7 @@ const extractUnboundToSeparateFile = async (
   const styleFile = getCorrespondingStyleFile(
     editor.document.uri.path,
     config.get("separateFile.outputFile", "$name.styles"),
-    config.get(
-      "tailwindStyledComponentsExtractor.separateFile.advanced.inputFileRegex",
-      ""
-    )
+    config.get("separateFile.advanced.inputFileRegex", "")
   );
   if (!styleFile) {
     vscode.window.showWarningMessage(
@@ -148,7 +151,7 @@ const extractUnboundToSeparateFile = async (
 
   const styleFileEditor = await openFileInEditor(styleFile);
   await insertStyles(styleFileEditor, declarations);
-  await insertTailwindStyledImport(styleFileEditor);
+  await insertTailwindStyledImport(styleFileEditor, config);
   await executeFormatCommand();
 
   await editor.document.save();
@@ -157,6 +160,7 @@ const extractUnboundToSeparateFile = async (
 
 const extractUnboundToSameFile = async (
   editor: vscode.TextEditor,
+  config: vscode.WorkspaceConfiguration,
   components: UnboundComponent[],
   declarations: string
 ) => {
@@ -168,7 +172,7 @@ const extractUnboundToSameFile = async (
   );
 
   await insertStyles(editor, declarations);
-  await insertTailwindStyledImport(editor);
+  await insertTailwindStyledImport(editor, config);
   await executeFormatCommand();
 
   await editor.document.save();
@@ -235,7 +239,7 @@ const extract = async (type: ExtractType): Promise<void> => {
           declarations
         );
       } else if (type == "extractCurrentToSameFile") {
-        await extractCurrentToSameFile(editor, component, declarations);
+        await extractCurrentToSameFile(editor, config, component, declarations);
       }
     } else {
       const components = collectUnboundComponents(text);
@@ -269,7 +273,12 @@ const extract = async (type: ExtractType): Promise<void> => {
           declarations
         );
       } else if (type == "extractUnboundToSameFile") {
-        await extractUnboundToSameFile(editor, components, declarations);
+        await extractUnboundToSameFile(
+          editor,
+          config,
+          components,
+          declarations
+        );
       }
     }
   } catch (e) {

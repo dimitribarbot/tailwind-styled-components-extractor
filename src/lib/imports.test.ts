@@ -68,21 +68,27 @@ import { foo } from "./bar"
 import { baz } from "./qux"
   `;
 
-  const insertion = getTailwindStyledImportInsertion(code);
+  const insertion = getTailwindStyledImportInsertion(
+    code,
+    "tailwind-styled-components"
+  );
   expect(insertion).toEqual({
     insertionText: 'import tw from "tailwind-styled-components"\n',
     insertionOffset: 0
   });
 });
 
-test("getTailwindStyledImportInsertion no existing import, but with other named imports ", async () => {
+test("getTailwindStyledImportInsertion no existing import, but with other named imports", async () => {
   const code = `
 import { foo } from "./bar"
 import { css }  from 'styled-components'
 import { baz } from "./qux"
   `;
 
-  const insertion = getTailwindStyledImportInsertion(code);
+  const insertion = getTailwindStyledImportInsertion(
+    code,
+    "tailwind-styled-components"
+  );
   expect(insertion).toEqual({
     insertionText: 'import tw from "tailwind-styled-components"\n',
     insertionOffset: 0
@@ -96,6 +102,56 @@ import  tw from 'tailwind-styled-components'
 import { baz } from "./qux"
   `;
 
-  const insertion = getTailwindStyledImportInsertion(code);
+  const insertion = getTailwindStyledImportInsertion(
+    code,
+    "tailwind-styled-components"
+  );
+  expect(insertion).toEqual(null);
+});
+
+test("getTailwindStyledImportInsertion no existing import and custom module name", async () => {
+  const code = `
+import { foo } from "./bar"
+import { baz } from "./qux"
+  `;
+
+  const insertion = getTailwindStyledImportInsertion(
+    code,
+    "my-custom-tailwind-styled-components"
+  );
+  expect(insertion).toEqual({
+    insertionText: 'import tw from "my-custom-tailwind-styled-components"\n',
+    insertionOffset: 0
+  });
+});
+
+test("getTailwindStyledImportInsertion no existing import, but with other named imports and custom module name", async () => {
+  const code = `
+import { foo } from "./bar"
+import { css }  from 'styled-components'
+import { baz } from "./qux"
+  `;
+
+  const insertion = getTailwindStyledImportInsertion(
+    code,
+    "my-custom-tailwind-styled-components"
+  );
+  expect(insertion).toEqual({
+    insertionText: 'import tw from "my-custom-tailwind-styled-components"\n',
+    insertionOffset: 0
+  });
+});
+
+test("getTailwindStyledImportInsertion with existing import and custom module name", async () => {
+  const code = `
+import { foo } from "./bar"
+import  tw from 'my-custom-tailwind-styled-components'
+import { baz } from "./qux"
+  `;
+
+  const insertion = getTailwindStyledImportInsertion(
+    code,
+    "my-custom-tailwind-styled-components"
+  );
   expect(insertion).toEqual(null);
 });

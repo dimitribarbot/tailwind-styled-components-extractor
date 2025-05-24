@@ -77,6 +77,15 @@ Example:
 }
 ```
 
+```json
+{
+  // Configure import statement to add when variable `tw` is unbound.
+  // For instance, with the default value of "tailwind-styled-component",
+  // import statement will be `import tw from "tailwind-styled-components"`.
+  "tailwindStyledComponentsExtractor.tailwindStyledComponentModule": "tailwind-styled-component"
+}
+```
+
 ## Configuring a Separate File for Your Styles
 
 Extracting your tailwind-styled-components to a separate file is probably the most powerful capability of this extension. Every codebase has its own convention for file names, however, so you will probably have to change the default configuration to match your own preferences.

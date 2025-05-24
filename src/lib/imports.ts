@@ -31,15 +31,19 @@ export const getImportInsertion = (
   };
 };
 
-export const getTailwindStyledImportInsertion = (existingText: string) => {
+export const getTailwindStyledImportInsertion = (
+  existingText: string,
+  tailwindStyledComponentModule: string
+) => {
   // we can use babel or `https://classic.yarnpkg.com/en/package/es-module-lexer` to parse the imports,
   // but for now we'll just use a regex
-  const importRegex =
-    /import.*\btw\b.*\bfrom\b.*["']tailwind-styled-components["'][;]?/;
+  const importRegex = new RegExp(
+    `import.*\\btw\\b.*\\bfrom\\b.*["']${tailwindStyledComponentModule}["'];?`
+  );
   const importAlreadyPresent = importRegex.test(existingText);
   if (!importAlreadyPresent) {
     return {
-      insertionText: `import tw from "tailwind-styled-components"\n`,
+      insertionText: `import tw from "${tailwindStyledComponentModule}"\n`,
       insertionOffset: 0
     };
   }

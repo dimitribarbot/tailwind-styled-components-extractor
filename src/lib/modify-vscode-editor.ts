@@ -80,9 +80,17 @@ export const replaceComponentClassNamesWithPropAttributes = async (
   });
 };
 
-export const insertTailwindStyledImport = async (editor: vscode.TextEditor) => {
+export const insertTailwindStyledImport = async (
+  editor: vscode.TextEditor,
+  config: vscode.WorkspaceConfiguration
+) => {
+  const tailwindStyledComponentModule = config.get(
+    "tailwindStyledComponentModule",
+    "tailwind-styled-components"
+  );
   const tailwindStyledImportInsertion = getTailwindStyledImportInsertion(
-    editor.document.getText()
+    editor.document.getText(),
+    tailwindStyledComponentModule
   );
 
   if (tailwindStyledImportInsertion) {

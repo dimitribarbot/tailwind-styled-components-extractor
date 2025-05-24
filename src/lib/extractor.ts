@@ -416,7 +416,8 @@ const getUnderlyingJSXNode = (
         isDefined(node.end) &&
         node.end >= index &&
         (isJSXOpeningElement(node) || isJSXClosingElement(node)) &&
-        isJSXIdentifier(node.name)
+        isJSXIdentifier(node.name) &&
+        path.parentPath
       ) {
         deepestNode = path.parentPath.node;
       }
