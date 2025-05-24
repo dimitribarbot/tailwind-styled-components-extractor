@@ -159,7 +159,7 @@
     ]
   },
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.100.0"
   },
   "packageManager": "yarn@4.9.1",
   "resolutions": {
